@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300">
+  <rect rx="24" ry="24" width="720" height="300" fill="#ea1c78"/>
+  <g fill="#fff" font-family="Arial, Helvetica, sans-serif" text-anchor="middle">
+    <text x="270" y="140" font-size="72" font-weight="900">PAY WITH</text>
+    <text x="270" y="210" font-size="72" font-weight="900">bKash</text>
+    <rect x="500" y="80" width="140" height="140" rx="24" ry="24" fill="#fff"/>
+    <polygon points="570,105 540,150 600,150" fill="#ea1c78"/>
+    <polygon points="570,195 540,150 600,150" fill="#ea1c78"/>
+  </g>
+</svg>
