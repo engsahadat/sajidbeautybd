@@ -37,11 +37,11 @@
                         <div class="footer-content">
                             <ul>
                                 <li><a class="text-content" href="{{ route('home') }}">{{ __('Home') }}</a></li>
-                                <li><a class="text-content" href="collection.html">Collections</a></li>
-                                <li><a class="text-content" href="{{ route('home.aboutUs') }}">{{ __('About Us') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.all-brand') }}">{{ __('Brands') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.all-category') }}">{{ __('Category') }}</a></li>
                                 <li><a class="text-content" href="{{ route('front.blog.index') }}">{{ __('Blogs') }}</a></li>
-                                <li><a class="text-content" href="offers.html">Offers</a></li>
-                                <li><a class="text-content" href="search.html">Search</a></li>
+                                <li><a class="text-content" href="{{ route('home.discount') }}">{{ __('Offers') }}</a></li>
+                                <li><a class="text-content" href="{{ route('wishlist.index') }}">{{ __('Wishlist') }}</a></li>
                             </ul>
                         </div>
                     </div>
@@ -54,13 +54,13 @@
                         <div class="footer-content">
                             <ul>
                                 <li><a class="text-content" href="{{ route('profile.edit') }}">{{ __('My Account') }}</a></li>
-                                <li><a class="text-content" href="dashboard.html">My Orders</a>
-                                </li>
-                                <li><a class="text-content" href="order-tracking.html">Track Order</a></li>
-                                <li><a class="text-content" href="wishlist.html">Wishlist</a></li>
-                                <li><a class="text-content" href="faq.html">Faq's</a></li>
-                                <li><a class="text-content" href="{{ route('home.contactUs') }}">{{ __('Contact Us') }}</a>
-                                </li>
+                                <li><a class="text-content" href="{{ route('account.orders.index') }}">{{ __('My Orders') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.aboutUs') }}">{{ __('About Us') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.contactUs') }}">{{ __('Contact Us') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.terms-and-conditions') }}">{{ __('Terms & Conditions') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.privacy-policy') }}">{{ __('Privacy Policy') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.refund-policy') }}">{{ __('Refund Policy') }}</a></li>
+                                <li><a class="text-content" href="{{ route('home.delivery-policy') }}">{{ __('Delivery Policy') }}</a></li>
                             </ul>
                         </div>
                     </div>

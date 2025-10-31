@@ -136,6 +136,21 @@ class HomeController extends Controller
 
     public function termsAndConditions()
     {
-        return view('front-end.terms-and-conditions');
+        return view('front-end.home.terms-and-conditions');
+    }
+
+    public function privacyPolicy()
+    {
+        return view('front-end.home.privacy-policy');
+    }
+
+    public function refundPolicy()
+    {
+        return view('front-end.home.refund-policy');
+    }
+
+    public function deliveryPolicy()
+    {
+        return view('front-end.home.delivery-policy');
     }
 }

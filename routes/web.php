@@ -110,6 +110,9 @@ Route::middleware('front')->controller(HomeController::class)->group(function ()
     Route::get('/contact-us', 'contactUs')->name('home.contactUs');
     Route::post('/contact-us', 'submitContact')->name('home.contact.submit');
     Route::get('/terms-and-conditions', 'termsAndConditions')->name('home.terms-and-conditions');
+    Route::get('/privacy-policy', 'privacyPolicy')->name('home.privacy-policy');
+    Route::get('/refund-policy', 'refundPolicy')->name('home.refund-policy');
+    Route::get('/delivery-policy', 'deliveryPolicy')->name('home.delivery-policy');
 });
 Route::controller(FrontBlogController::class)->group(function () {
     Route::get('/blogs', 'index')->name('front.blog.index');
