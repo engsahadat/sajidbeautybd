@@ -1,0 +1,133 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Brand;
+use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+
+class BrandSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $brands = [
+                ['name' => 'Vaseline', 'slug' => 'vaseline'],
+                ['name' => 'Johnson', 'slug' => 'johnson'],
+                ['name' => 'Herbal Essence', 'slug' => 'herbal-essence'],
+                ['name' => 'Dove', 'slug' => 'dove'],
+                ['name' => 'Garniner', 'slug' => 'garniner'],
+                ['name' => 'LoReal', 'slug' => 'loreal'],
+                ['name' => 'Hi-Speed', 'slug' => 'hi-speed'],
+                ['name' => 'Neutrogna', 'slug' => 'neutrogna'],
+                ['name' => 'Fair&Lovely', 'slug' => 'fair-and-lovely'],
+                ['name' => 'Fem', 'slug' => 'fem'],
+                ['name' => 'Saffron', 'slug' => 'saffron'],
+                ['name' => 'Bioderma', 'slug' => 'bioderma'],
+                ['name' => 'Cetaphil', 'slug' => 'cetaphil'],
+                ['name' => 'Centella', 'slug' => 'centella'],
+                ['name' => 'Simple', 'slug' => 'simple'],
+                ['name' => 'Cosrx', 'slug' => 'cosrx'],
+                ['name' => 'Sheglam', 'slug' => 'sheglam'],
+                ['name' => 'Technic', 'slug' => 'technic'],
+                ['name' => 'Vatika', 'slug' => 'vatika'],
+                ['name' => 'Everly', 'slug' => 'everly'],
+                ['name' => 'Lagil pro', 'slug' => 'lagil-pro'],
+                ['name' => 'Bob', 'slug' => 'bob'],
+                ['name' => 'Lake me', 'slug' => 'lake-me'],
+                ['name' => 'Fit me', 'slug' => 'fit-me'],
+                ['name' => 'Dr west', 'slug' => 'dr-west'],
+                ['name' => 'Pepsodent', 'slug' => 'pepsodent'],
+                ['name' => 'Colgate', 'slug' => 'colgate'],
+                ['name' => 'Thanka', 'slug' => 'thanka'],
+                ['name' => 'Fino', 'slug' => 'fino'],
+                ['name' => 'Ponds', 'slug' => 'ponds'],
+                ['name' => 'Palmers', 'slug' => 'palmers'],
+                ['name' => 'White spa', 'slug' => 'white-spa'],
+                ['name' => 'Kodomo', 'slug' => 'kodomo'],
+                ['name' => 'Sunslik', 'slug' => 'sunslik'],
+                ['name' => 'Cerave', 'slug' => 'cerave'],
+                ['name' => 'Sakora', 'slug' => 'sakora'],
+                ['name' => 'Anua', 'slug' => 'anua'],
+                ['name' => 'Alpechin', 'slug' => 'alpechin'],
+                ['name' => 'The body shop', 'slug' => 'the-body-shop'],
+                ['name' => 'Boots', 'slug' => 'boots'],
+                ['name' => 'Watson', 'slug' => 'watson'],
+                ['name' => 'Olay', 'slug' => 'olay'],
+                ['name' => 'Pantene', 'slug' => 'pantene'],
+                ['name' => 'Essence', 'slug' => 'essence'],
+                ['name' => 'Missand misses', 'slug' => 'missand-misses'],
+                ['name' => 'Dabur', 'slug' => 'dabur'],
+                ['name' => 'Peeling Gel', 'slug' => 'peeling-gel'],
+                ['name' => 'Bio active', 'slug' => 'bio-active'],
+                ['name' => 'Maqbull', 'slug' => 'maqbull'],
+                ['name' => 'Miss rose', 'slug' => 'miss-rose'],
+                ['name' => 'Lazzi', 'slug' => 'lazzi'],
+                ['name' => 'Cathy doll', 'slug' => 'cathy-doll'],
+                ['name' => 'Magic', 'slug' => 'magic'],
+                ['name' => 'St ives', 'slug' => 'st-ives'],
+                ['name' => 'White tone', 'slug' => 'white-tone'],
+                ['name' => 'Kin son', 'slug' => 'kin-son'],
+                ['name' => 'Gillette', 'slug' => 'gillette'],
+                ['name' => 'Wild stone', 'slug' => 'wild-stone'],
+                ['name' => 'Fogg', 'slug' => 'fogg'],
+                ['name' => 'Enchanter', 'slug' => 'enchanter'],
+                ['name' => 'Sasi', 'slug' => 'sasi'],
+                ['name' => 'Nivea', 'slug' => 'nivea'],
+                ['name' => 'Delight', 'slug' => 'delight'],
+                ['name' => 'Sexi pink', 'slug' => 'sexi-pink'],
+                ['name' => 'Victoria', 'slug' => 'victoria'],
+                ['name' => 'Dr Rasel', 'slug' => 'dr-rasel'],
+                ['name' => 'Kojic', 'slug' => 'kojic'],
+                ['name' => 'Streax', 'slug' => 'streax'],
+                ['name' => 'Adidas', 'slug' => 'adidas'],
+                ['name' => 'Livon', 'slug' => 'livon'],
+                ['name' => 'Blue lady', 'slug' => 'blue-lady'],
+                ['name' => 'XHC', 'slug' => 'xhc'],
+                ['name' => 'Groome', 'slug' => 'groome'],
+                ['name' => 'Dabo', 'slug' => 'dabo'],
+                ['name' => 'Rice', 'slug' => 'rice'],
+                ['name' => 'Vitamin E', 'slug' => 'vitamin-e'],
+                ['name' => 'Lakeme', 'slug' => 'lakeme'],
+                ['name' => 'Everyone', 'slug' => 'everyone'],
+                ['name' => 'Fair&Handsone', 'slug' => 'fair-and-handsone'],
+                ['name' => 'Flex', 'slug' => 'flex'],
+                ['name' => 'Gatsby', 'slug' => 'gatsby'],
+                ['name' => 'Frulser', 'slug' => 'frulser'],
+                ['name' => 'Florae', 'slug' => 'florae'],
+                ['name' => 'Glutathione', 'slug' => 'glutathione'],
+                ['name' => 'Havoc', 'slug' => 'havoc'],
+                ['name' => 'Head&Sholder', 'slug' => 'head-and-sholder'],
+                ['name' => 'Himalaya', 'slug' => 'himalaya'],
+                ['name' => 'Hot black', 'slug' => 'hot-black'],
+                ['name' => 'Hugo boss', 'slug' => 'hugo-boss'],
+                ['name' => 'I Care', 'slug' => 'i-care'],
+                ['name' => 'Jigot', 'slug' => 'jigot'],
+                ['name' => 'Jergens', 'slug' => 'jergens'],
+                ['name' => 'Jaguar', 'slug' => 'jaguar'],
+                ['name' => 'Infinite pleasure', 'slug' => 'infinite-pleasure'],
+                ['name' => 'Jonna', 'slug' => 'jonna'],
+                ['name' => 'Kemei', 'slug' => 'kemei'],
+                ['name' => 'Keo karpin', 'slug' => 'keo-karpin'],
+                ['name' => 'Kiss beauty', 'slug' => 'kiss-beauty'],
+            ];
+
+        foreach ($brands as $sl => $data) {
+            Brand::create([
+                'name'       => $data['name'],
+                'slug'       => $data['slug'],
+                'description' => null,
+                'logo' => null,
+                'website' => null,
+                'is_active'  => 1,
+                'sort_order' => $sl + 1,
+                'status'     => 'active',
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+        }
+    }
+}
