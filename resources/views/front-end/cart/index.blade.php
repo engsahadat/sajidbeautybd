@@ -28,6 +28,9 @@
                         <img src="{{ $item->product?->image_url }}" onerror="this.onerror=null;this.src='{{ asset('images/default-image.png') }}'" width="60" height="60" style="object-fit:cover;border-radius:6px;"/>
                         <div>
                           <div class="fw-semibold">{{ $item->product?->name }}</div>
+                          @if($item->variant_display)
+                            <small class="badge bg-light text-dark border">{{ $item->variant_display }}</small>
+                          @endif
                         </div>
                       </div>
                     </td>

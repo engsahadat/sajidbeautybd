@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\ShoppingCart;
 use App\Models\Coupon;
 use App\Models\WishlistItem;
@@ -54,6 +55,7 @@ class CartController extends Controller
 
             $data = $request->validate([
                 'product_id' => ['required','integer','exists:products,id'],
+                'variant_id' => ['nullable','integer','exists:product_variants,id'],
                 'quantity' => ['nullable','integer','min:1'],
             ]);
             
@@ -61,18 +63,80 @@ class CartController extends Controller
             $cart = $this->getOrCreateCart();
 
             $product = Product::findOrFail($data['product_id']);
-            // Use the effective price (sale_price if available, otherwise regular price)
-            $unitPrice = $product->effective_price;
+            $variant = null;
+            $variantDetails = null;
+            
+            // Handle variant if provided
+            if (!empty($data['variant_id'])) {
+                $variant = ProductVariant::findOrFail($data['variant_id']);
+                
+                // Ensure variant belongs to the product
+                if ($variant->product_id !== $product->id) {
+                    throw new \Exception('Invalid variant for this product');
+                }
+                
+                // Check variant stock
+                if ($variant->stock_quantity < $qty) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Insufficient stock for selected variant'
+                    ], 400);
+                }
+                
+                // Store variant details as JSON for order history
+                $variantDetails = json_encode([
+                    'name' => $variant->name,
+                    'value' => $variant->value,
+                    'sku' => $variant->sku,
+                ]);
+                
+                // Use variant price if available, otherwise product price
+                $unitPrice = $variant->effective_price;
+            } else {
+                // Use the effective price (sale_price if available, otherwise regular price)
+                $unitPrice = $product->effective_price;
+                
+                // Check product stock if no variant
+                if ($product->manage_stock && $product->stock_quantity < $qty) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Insufficient stock'
+                    ], 400);
+                }
+            }
 
-            $item = $cart->items()->where('product_id', $product->id)->first();
+            // Check if item with same product and variant already exists
+            $item = $cart->items()
+                ->where('product_id', $product->id)
+                ->where('variant_id', $data['variant_id'] ?? null)
+                ->first();
 
             if ($item) {
-                $item->quantity += $qty;
+                $newQty = $item->quantity + $qty;
+                
+                // Check stock for updated quantity
+                if ($variant) {
+                    if ($variant->stock_quantity < $newQty) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Cannot add more items. Stock limit reached.'
+                        ], 400);
+                    }
+                } elseif ($product->manage_stock && $product->stock_quantity < $newQty) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cannot add more items. Stock limit reached.'
+                    ], 400);
+                }
+                
+                $item->quantity = $newQty;
                 $item->unit_price = $unitPrice; // ensure latest price
                 $item->save();
             } else {
                 $cart->items()->create([
                     'product_id' => $product->id,
+                    'variant_id' => $data['variant_id'] ?? null,
+                    'variant_details' => $variantDetails,
                     'quantity' => $qty,
                     'unit_price' => $unitPrice,
                 ]);

@@ -76,21 +76,26 @@
                 <tbody>
                   @foreach($order->items as $it)
                     <tr>
-                      <td>{{ $it->product_name }}</td>
+                      <td>
+                        <strong>{{ $it->product_name }}</strong>
+                        @if($it->variant_display)
+                            <br><small class="text-muted">{{ $it->variant_display }}</small>
+                        @endif
+                      </td>
                       <td class="text-center">{{ $it->quantity }}</td>
-                      <td class="text-end">{{ number_format($it->unit_price,2) }}</td>
-                      <td class="text-end">{{ number_format($it->total_price,2) }}</td>
+                      <td class="text-end">৳{{ number_format($it->unit_price,2) }}</td>
+                      <td class="text-end">৳{{ number_format($it->total_price,2) }}</td>
                     </tr>
                   @endforeach
                 </tbody>
                 <tfoot>
                   <tr>
                     <th colspan="3" class="text-end">Subtotal</th>
-                    <th class="text-end">{{ number_format($order->subtotal,2) }}</th>
+                    <th class="text-end">৳{{ number_format($order->subtotal,2) }}</th>
                 </tr>
                   <tr>
                     <th colspan="3" class="text-end">Shipping</th>
-                    <th class="text-end">{{ number_format($order->shipping_amount,2) }}</th>
+                    <th class="text-end">৳{{ number_format($order->shipping_amount,2) }}</th>
                 </tr>
                   <tr>
                     <th colspan="3" class="text-end">Tax</th>

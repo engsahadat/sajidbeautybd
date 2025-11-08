@@ -1,6 +1,9 @@
 @extends('front-end.layouts.app')
 @section('title', 'Product Details')
 @section('content')
+    @php
+        $allowedTags = '<p><br><ul><ol><li><strong><em><b><i><u><a><img><table><thead><tbody><tr><td><th><h1><h2><h3><h4><h5><h6>';
+    @endphp
     <style>
         .product-facts { text-align: left; }
         .product-facts .rich-content { font-size: .95rem; }
@@ -14,6 +17,309 @@
         .product-facts h6 { font-weight: 700; color: #6c757d; }
         /* Ensure editor images fit container */
         .accordion-body img, .product-facts .rich-content img { max-width: 100%; height: auto; display: block; margin: 0 auto .5rem; }
+        
+        /* Variant section styles */
+        .variant-selection-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 1px solid #e8ecef;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .variant-selection-box h5 {
+            font-size: 19px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #1a1a1a;
+            letter-spacing: -0.3px;
+            position: relative;
+            padding-bottom: 12px;
+        }
+        .variant-selection-box h5::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #0066ff 0%, #00a2ff 100%);
+            border-radius: 2px;
+        }
+        .variant-group {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .variant-group:last-of-type {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .variant-group-label {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 14px;
+            display: block;
+            text-transform: capitalize;
+        }
+        .variant-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        /* Rectangle Button Style (default) */
+        .variant-btn {
+            padding: 12px 24px;
+            border: 2px solid #e0e4e8;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 14px;
+            color: #2c3e50;
+            min-width: 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .variant-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .variant-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+        .variant-btn:hover:not(:disabled) {
+            border-color: #0066ff;
+            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,102,255,0.15);
+        }
+        .variant-btn.active {
+            border-color: #0066ff;
+            background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(0,102,255,0.4);
+            transform: translateY(-1px);
+        }
+        .variant-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            background: #f5f5f5;
+            text-decoration: line-through;
+            border-color: #ddd;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Circle Button Style */
+        .variant-btn.variant-circle {
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .variant-btn.variant-circle:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        /* Image Swatch Style */
+        .variant-btn.variant-image {
+            padding: 5px;
+            width: 70px;
+            height: 70px;
+            min-width: 70px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .variant-btn.variant-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            transition: transform 0.3s ease;
+        }
+        .variant-btn.variant-image:hover:not(:disabled) img {
+            transform: scale(1.1);
+        }
+        .variant-btn.variant-image.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            z-index: 2;
+            background: rgba(0,102,255,0.9);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Color Swatch Style */
+        .variant-btn.variant-color {
+            padding: 0;
+            width: 52px;
+            height: 52px;
+            min-width: 52px;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .variant-btn.variant-color::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            border-radius: 50%;
+            background: var(--swatch-color, #000);
+            transition: all 0.3s ease;
+        }
+        .variant-btn.variant-color:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.08);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+        }
+        .variant-btn.variant-color.active {
+            border-color: #0066ff;
+            border-width: 3px;
+        }
+        .variant-btn.variant-color.active::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            font-weight: 900;
+            text-shadow: 0 0 3px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 1;
+        }
+
+        /* Radio Button Style */
+        .variant-radio-wrapper {
+            display: flex;
+            align-items: center;
+            padding: 12px 18px;
+            border: 2px solid #e0e4e8;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            min-width: 120px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+        .variant-radio-wrapper:hover {
+            border-color: #0066ff;
+            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,102,255,0.12);
+        }
+        .variant-radio-wrapper.active {
+            border-color: #0066ff;
+            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
+            box-shadow: 0 4px 12px rgba(0,102,255,0.15);
+        }
+        .variant-radio-wrapper input[type="radio"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #0066ff;
+        }
+        .variant-radio-wrapper label {
+            margin: 0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Dropdown Style */
+        .variant-dropdown {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px 18px;
+            border: 2px solid #e0e4e8;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232c3e50' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 40px;
+        }
+        .variant-dropdown:hover {
+            border-color: #0066ff;
+            background-color: #f0f7ff;
+        }
+        .variant-dropdown:focus {
+            outline: none;
+            border-color: #0066ff;
+            box-shadow: 0 0 0 3px rgba(0,102,255,0.1);
+            background-color: #f0f7ff;
+        }
+
+        .variant-info-box {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #e8ecef;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .variant-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .variant-info-row:last-child {
+            margin-bottom: 0;
+        }
+        .variant-info-label {
+            font-size: 13px;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .variant-info-value {
+            font-size: 15px;
+            color: #1a1a1a;
+            font-weight: 700;
+        }
     </style>
     <!-- breadcrumb start -->
     <div class="breadcrumb-section">
@@ -107,7 +413,7 @@
                                     </div>
 
                                     <span class="divider">|</span>
-                                    <a href="#!">{{ $product->reviews_count ?? 0 }} Reviews</a>
+                                    <a href="javascript:void(0)">{{ $product->reviews_count ?? 0 }} Reviews</a>
                                 </div>
 
                                 <div class="price-text">
@@ -116,7 +422,9 @@
                                             ৳{{ number_format($product->sale_price, 2) }}
                                             <del class="text-muted ms-2">৳{{ number_format($product->price, 2) }}</del>
                                         </h3>
-                                        @php($discount = (($product->price - $product->sale_price) / $product->price) * 100)
+                                        @php
+                                            $discount = (($product->price - $product->sale_price) / max($product->price, 1)) * 100;
+                                        @endphp
                                         <span class="text-success">{{ round($discount) }}% Off</span>
                                     @else
                                         <h3><span class="fw-normal">MRP:</span>
@@ -148,7 +456,7 @@
                                         <div id="flush-collapseOne" class="accordion-collapse collapse"
                                             data-bs-parent="#accordionFlushExample">
                                             <div class="accordion-body">
-                                                @php($allowedTags = '<p><br><ul><ol><li><strong><em><b><i><u><a><img><table><thead><tbody><tr><td><th><h1><h2><h3><h4><h5><h6>')
+                                                
                                                 @if($product->description)
                                                     @if($product->description !== strip_tags($product->description))
                                                         {!! strip_tags($product->description, $allowedTags) !!}
@@ -189,6 +497,11 @@
                                                                 <span>Brand: </span>{{ $product->brand->name }}
                                                             </li>
                                                         @endif
+                                                        @if($product->product_type)
+                                                            <li>
+                                                                <span>Type: </span>{{ ucfirst($product->product_type) }}
+                                                            </li>
+                                                        @endif
                                                         @if($product->category)
                                                             <li>
                                                                 <span>Category: </span>{{ $product->category->name }}
@@ -220,6 +533,29 @@
                                                         @endif --}}
                                                     </ul>
                                                 </div>
+                                                @if($product->attributes && $product->attributes->isNotEmpty())
+                                                <div class="bordered-box">
+                                                    <h4 class="sub-title">Specifications</h4>
+                                                    @php($grouped = $product->attributes->groupBy('attribute_group'))
+                                                    @foreach($grouped as $group => $attrs)
+                                                        @if($group)
+                                                            <h6 class="mb-2">{{ $group }}</h6>
+                                                        @endif
+                                                        <div class="table-responsive mb-2">
+                                                            <table class="table table-sm mb-0">
+                                                                <tbody>
+                                                                @foreach($attrs as $attr)
+                                                                    <tr>
+                                                                        <td class="text-muted" style="width:35%">{{ $attr->attribute_name }}</td>
+                                                                        <td>{{ $attr->attribute_value }}</td>
+                                                                    </tr>
+                                                                @endforeach
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                @endif
                                                 <div class="bordered-box">
                                                     <h4 class="sub-title"> Delivery Details</h4>
                                                     <ul class="delivery-details">
@@ -241,6 +577,136 @@
                         <div class="col-lg-4">
                             <div class="product-page-details product-form-box product-right-box d-flex
                                 align-items-center flex-column my-0">
+                                
+                                @if($product->hasVariants())
+                                    <div class="variant-selection-box w-100">
+                                        <h5>Select Option</h5>
+                                        @php($variantGroups = $product->variants->groupBy('name'))
+                                        @foreach($variantGroups as $variantName => $variants)
+                                            @php($displayStyle = $variants->first()->display_style ?? 'rectangle')
+                                            <div class="variant-group">
+                                                <span class="variant-group-label">{{ $variantName }}</span>
+                                                
+                                                @if($displayStyle === 'dropdown')
+                                                    {{-- Dropdown Style --}}
+                                                    <select class="variant-dropdown" 
+                                                        data-variant-name="{{ $variantName }}"
+                                                        onchange="selectVariantFromDropdown(this)">
+                                                        @foreach($variants as $variant)
+                                                            <option 
+                                                                value="{{ $variant->id }}"
+                                                                data-variant-id="{{ $variant->id }}"
+                                                                data-variant-name="{{ $variantName }}"
+                                                                data-variant-value="{{ $variant->value }}"
+                                                                data-variant-price="{{ $variant->price ?? $product->effective_price }}"
+                                                                data-variant-stock="{{ $variant->stock_quantity }}"
+                                                                data-variant-sku="{{ $variant->sku ?? $product->sku }}"
+                                                                {{ $variant->is_default ? 'selected' : '' }}
+                                                                {{ $variant->stock_quantity <= 0 ? 'disabled' : '' }}>
+                                                                {{ $variant->value }} {{ $variant->stock_quantity <= 0 ? '(Out of stock)' : '' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                @else
+                                                    <div class="variant-options">
+                                                        @foreach($variants as $variant)
+                                                            @if($displayStyle === 'radio')
+                                                                {{-- Radio Button Style --}}
+                                                                <div class="variant-radio-wrapper {{ $variant->is_default ? 'active' : '' }}"
+                                                                    data-variant-id="{{ $variant->id }}"
+                                                                    onclick="selectVariantRadio(this)">
+                                                                    <input type="radio" 
+                                                                        name="variant_{{ $variantName }}" 
+                                                                        id="variant_{{ $variant->id }}"
+                                                                        value="{{ $variant->id }}"
+                                                                        data-variant-name="{{ $variantName }}"
+                                                                        data-variant-value="{{ $variant->value }}"
+                                                                        data-variant-price="{{ $variant->price ?? $product->effective_price }}"
+                                                                        data-variant-stock="{{ $variant->stock_quantity }}"
+                                                                        data-variant-sku="{{ $variant->sku ?? $product->sku }}"
+                                                                        {{ $variant->is_default ? 'checked' : '' }}
+                                                                        {{ $variant->stock_quantity <= 0 ? 'disabled' : '' }}>
+                                                                    <label for="variant_{{ $variant->id }}">{{ $variant->value }}</label>
+                                                                </div>
+                                                            @elseif($displayStyle === 'color')
+                                                                {{-- Color Swatch Style --}}
+                                                                <button type="button" 
+                                                                    class="variant-btn variant-color {{ $variant->is_default ? 'active' : '' }}"
+                                                                    style="--swatch-color: {{ $variant->color_code ?? '#000000' }}"
+                                                                    data-variant-id="{{ $variant->id }}"
+                                                                    data-variant-name="{{ $variantName }}"
+                                                                    data-variant-value="{{ $variant->value }}"
+                                                                    data-variant-price="{{ $variant->price ?? $product->effective_price }}"
+                                                                    data-variant-stock="{{ $variant->stock_quantity }}"
+                                                                    data-variant-sku="{{ $variant->sku ?? $product->sku }}"
+                                                                    {{ $variant->stock_quantity <= 0 ? 'disabled' : '' }}
+                                                                    onclick="selectVariant(this)"
+                                                                    title="{{ $variant->value }}">
+                                                                </button>
+                                                            @elseif($displayStyle === 'image')
+                                                                {{-- Image Swatch Style --}}
+                                                                <button type="button" 
+                                                                    class="variant-btn variant-image {{ $variant->is_default ? 'active' : '' }}"
+                                                                    data-variant-id="{{ $variant->id }}"
+                                                                    data-variant-name="{{ $variantName }}"
+                                                                    data-variant-value="{{ $variant->value }}"
+                                                                    data-variant-price="{{ $variant->price ?? $product->effective_price }}"
+                                                                    data-variant-stock="{{ $variant->stock_quantity }}"
+                                                                    data-variant-sku="{{ $variant->sku ?? $product->sku }}"
+                                                                    {{ $variant->stock_quantity <= 0 ? 'disabled' : '' }}
+                                                                    onclick="selectVariant(this)"
+                                                                    title="{{ $variant->value }}">
+                                                                    <img src="{{ $variant->swatch_image_url ?? $variant->image_url ?? asset('images/placeholder.png') }}" 
+                                                                         alt="{{ $variant->value }}">
+                                                                </button>
+                                                            @elseif($displayStyle === 'circle')
+                                                                {{-- Circle Button Style --}}
+                                                                <button type="button" 
+                                                                    class="variant-btn variant-circle {{ $variant->is_default ? 'active' : '' }}"
+                                                                    data-variant-id="{{ $variant->id }}"
+                                                                    data-variant-name="{{ $variantName }}"
+                                                                    data-variant-value="{{ $variant->value }}"
+                                                                    data-variant-price="{{ $variant->price ?? $product->effective_price }}"
+                                                                    data-variant-stock="{{ $variant->stock_quantity }}"
+                                                                    data-variant-sku="{{ $variant->sku ?? $product->sku }}"
+                                                                    {{ $variant->stock_quantity <= 0 ? 'disabled' : '' }}
+                                                                    onclick="selectVariant(this)">
+                                                                    {{ $variant->value }}
+                                                                </button>
+                                                            @else
+                                                                {{-- Rectangle Button Style (default) --}}
+                                                                <button type="button" 
+                                                                    class="variant-btn {{ $variant->is_default ? 'active' : '' }}"
+                                                                    data-variant-id="{{ $variant->id }}"
+                                                                    data-variant-name="{{ $variantName }}"
+                                                                    data-variant-value="{{ $variant->value }}"
+                                                                    data-variant-price="{{ $variant->price ?? $product->effective_price }}"
+                                                                    data-variant-stock="{{ $variant->stock_quantity }}"
+                                                                    data-variant-sku="{{ $variant->sku ?? $product->sku }}"
+                                                                    {{ $variant->stock_quantity <= 0 ? 'disabled' : '' }}
+                                                                    onclick="selectVariant(this)">
+                                                                    {{ $variant->value }}
+                                                                </button>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                        <div class="variant-info-box">
+                                            <div class="variant-info-row">
+                                                <span class="variant-info-label">SKU:</span>
+                                                <span class="variant-info-value" id="variant-sku">{{ optional($product->getDefaultVariant())->sku ?? $product->sku }}</span>
+                                            </div>
+                                            <div class="variant-info-row">
+                                                <span class="variant-info-label">Available:</span>
+                                                <span class="variant-info-value" id="variant-stock">{{ optional($product->getDefaultVariant())->stock_quantity ?? $product->stock_quantity }}</span> pieces
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="selected-variant-id" value="{{ optional($product->getDefaultVariant())->id ?? '' }}">
+                                    </div>
+                                @endif
+                                
                                 <div class="product-buttons">
                                     <div class="qty-section">
                                         <div class="qty-box">
@@ -308,7 +774,7 @@
                                 </div>
                                 
                                 <div class="w-100 mt-2 product-facts">
-                                    @php($allowedTags = '<p><br><ul><ol><li><strong><em><b><i><u><a><table><thead><tbody><tr><td><th><h1><h2><h3><h4><h5><h6>')
+                                    
                                     @if($product->highlight)
                                         <h5 class="mb-2">Highlight</h5>
                                         <div class="rich-content mb-3">
@@ -320,8 +786,20 @@
                                         </div>
                                     @endif
 
+                                    @php(
+                                        $typeLabels = [
+                                            'hair' => ['type' => 'Hair Type', 'concern' => 'Hair Concern'],
+                                            'face' => ['type' => 'Face Type', 'concern' => 'Face Concern'],
+                                            'body' => ['type' => 'Body Skin Type', 'concern' => 'Body Skin Concern'],
+                                            'makeup' => ['type' => 'Makeup Type', 'concern' => 'Makeup Focus'],
+                                            'fragrance' => ['type' => 'Fragrance Type', 'concern' => 'Fragrance Notes'],
+                                            'tools' => ['type' => 'Tool Type', 'concern' => 'Tool Use / Feature'],
+                                            'skin' => ['type' => 'Skin Type', 'concern' => 'Skin Concern'],
+                                        ]
+                                    )
+                                    @php($ctx = $typeLabels[$product->product_type ?? 'skin'] ?? $typeLabels['skin'])
                                     @if($product->skin_concern)
-                                        <h6 class="mb-1">Skin Concern</h6>
+                                        <h6 class="mb-1">{{ $ctx['concern'] }}</h6>
                                         <div class="rich-content mb-3">
                                             @if($product->skin_concern !== strip_tags($product->skin_concern))
                                                 {!! strip_tags($product->skin_concern, $allowedTags) !!}
@@ -332,7 +810,7 @@
                                     @endif
 
                                     @if($product->skin_type)
-                                        <h6 class="mb-1">Skin Type</h6>
+                                        <h6 class="mb-1">{{ $ctx['type'] }}</h6>
                                         <div class="rich-content mb-3">
                                             @if($product->skin_type !== strip_tags($product->skin_type))
                                                 {!! strip_tags($product->skin_type, $allowedTags) !!}
@@ -363,6 +841,79 @@
                                             @endif
                                         </div>
                                     @endif
+                                </div>
+                                
+                                <!-- Customer Reviews Section -->
+                                <div class="w-100 mt-3">
+                                    <div class="accordion" id="reviewsAccordion">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingReviews">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReviews" aria-expanded="false" aria-controls="collapseReviews">
+                                                    Customer Reviews ({{ $product->reviews_count ?? 0 }})
+                                                </button>
+                                            </h2>
+                                            <div id="collapseReviews" class="accordion-collapse collapse" aria-labelledby="headingReviews" data-bs-parent="#reviewsAccordion">
+                                                <div class="accordion-body">
+                                                    @if(($product->reviews ?? collect())->isEmpty())
+                                                        <p class="text-muted mb-3">No reviews yet. Be the first to review this product.</p>
+                                                    @else
+                                                        <div class="mb-3">
+                                                            @foreach($product->reviews as $rev)
+                                                                <div class="border rounded p-3 mb-2">
+                                                                    <div class="d-flex align-items-center justify-content-between">
+                                                                        <div>
+                                                                            @for($i=1;$i<=5;$i++)
+                                                                                <i class="ri-star{{ $i <= (int)$rev->rating ? '-fill text-warning' : '-line text-muted' }}"></i>
+                                                                            @endfor
+                                                                            <strong class="ms-2">{{ $rev->title }}</strong>
+                                                                        </div>
+                                                                        <small class="text-muted">{{ $rev->created_at?->format('M d, Y') }}</small>
+                                                                    </div>
+                                                                    <div class="mt-2">{{ $rev->review }}</div>
+                                                                    @if($rev->is_verified_purchase)
+                                                                        <span class="badge bg-success mt-2">Verified Purchase</span>
+                                                                    @endif
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+
+                                                    @auth
+                                                    <hr>
+                                                    <h5 class="mb-3">Write a Review</h5>
+                                                    <form id="review-form" action="{{ route('front.reviews.store', ['product' => $product->id]) }}" method="POST">
+                                                        @csrf
+                                                        <div class="mb-3">
+                                                            <label class="form-label d-block">Your Rating <span class="text-danger">*</span></label>
+                                                            <div id="rating-stars" class="d-flex gap-1">
+                                                                @for($i=1;$i<=5;$i++)
+                                                                    <i class="ri-star-line fs-4 rating-star" data-value="{{ $i }}" style="cursor:pointer;"></i>
+                                                                @endfor
+                                                            </div>
+                                                            <input type="hidden" name="rating" id="rating" value="">
+                                                            <div class="text-danger d-none error-message" id="rating-error"></div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="title" class="form-label">Title</label>
+                                                            <input type="text" class="form-control" id="title" name="title" maxlength="100" placeholder="Great product!">
+                                                            <div class="text-danger d-none error-message" id="title-error"></div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label for="review" class="form-label">Your Review <span class="text-danger">*</span></label>
+                                                            <textarea class="form-control" id="review" name="review" rows="4" placeholder="Share your experience..." maxlength="2000"></textarea>
+                                                            <div class="text-danger d-none error-message" id="review-error"></div>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-primary">Submit Review</button>
+                                                    </form>
+                                                    @else
+                                                        <div class="alert alert-info mt-3">
+                                                            Please <a href="{{ route('login') }}">login</a> to write a review.
+                                                        </div>
+                                                    @endauth
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                             </div>
@@ -691,6 +1242,62 @@
                 loadUserPreferences();
             }
         });
+        // Review stars interaction
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('#rating-stars .rating-star');
+            const ratingInput = document.getElementById('rating');
+            function paintStars(val){
+                stars.forEach((s, idx) => {
+                    if (idx < val) { s.classList.add('text-warning'); s.classList.remove('ri-star-line'); s.classList.add('ri-star-fill'); }
+                    else { s.classList.remove('text-warning'); s.classList.remove('ri-star-fill'); s.classList.add('ri-star-line'); }
+                });
+            }
+            stars.forEach(star => {
+                star.addEventListener('click', function(){
+                    const val = parseInt(this.getAttribute('data-value'));
+                    ratingInput.value = val;
+                    paintStars(val);
+                    document.getElementById('rating-error')?.classList.add('d-none');
+                });
+            });
+        });
+
+        // Review submit via AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('review-form');
+            if (!form) return;
+            form.addEventListener('submit', function(e){
+                e.preventDefault();
+                // clear errors
+                document.querySelectorAll('#review-form .error-message').forEach(el=>{ el.classList.add('d-none'); el.textContent='';});
+                document.querySelectorAll('#review-form .form-control').forEach(el=> el.classList.remove('is-invalid'));
+                const formData = new FormData(form);
+                fetch(form.getAttribute('action'), {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json' },
+                    body: formData
+                }).then(async (res) => {
+                    const ct = res.headers.get('content-type')||'';
+                    const isJson = ct.includes('application/json');
+                    const data = isJson ? await res.json() : {};
+                    if (res.status === 401 && data.redirect) { window.location.href = data.redirect; return; }
+                    if (res.ok && data.success) {
+                        showNotification(data.message || 'Review submitted', 'success');
+                        window.location.reload();
+                    } else if (res.status === 422 && data.errors) {
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            const id = field.replace(/\./g,'_');
+                            const errDiv = document.getElementById(id+'-error');
+                            const input = document.getElementById(id);
+                            if (errDiv) { errDiv.classList.remove('d-none'); errDiv.textContent = messages[0]; }
+                            if (input) { input.classList.add('is-invalid'); }
+                        }
+                    } else {
+                        showNotification(data.message || 'Could not submit review', 'error');
+                    }
+                }).catch(() => showNotification('Could not submit review', 'error'));
+            });
+        });
         function loadUserPreferences() {
             const productId = {{ $product->id }};
             fetch('{{ route('get.wishlist.items') }}', {
@@ -742,5 +1349,86 @@
             })
             .catch(error => console.error('Error loading compare preferences:', error));
         }
+        
+        // Variant selection handler
+        function selectVariant(button) {
+            // Remove active class from all variant buttons in the same group
+            const groupButtons = button.closest('.variant-options').querySelectorAll('.variant-btn');
+            groupButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to selected button
+            button.classList.add('active');
+            
+            // Update variant info display
+            updateVariantInfo(button);
+        }
+
+        function selectVariantRadio(wrapper) {
+            // Remove active class from all radio wrappers in the same group
+            const groupWrappers = wrapper.closest('.variant-options').querySelectorAll('.variant-radio-wrapper');
+            groupWrappers.forEach(w => w.classList.remove('active'));
+            
+            // Add active class to selected wrapper
+            wrapper.classList.add('active');
+            
+            // Check the radio input
+            const radio = wrapper.querySelector('input[type="radio"]');
+            radio.checked = true;
+            
+            // Update variant info display
+            updateVariantInfo(radio);
+        }
+
+        function selectVariantFromDropdown(select) {
+            const selectedOption = select.options[select.selectedIndex];
+            updateVariantInfo(selectedOption);
+        }
+
+        function updateVariantInfo(element) {
+            const variantId = element.getAttribute('data-variant-id');
+            const variantSku = element.getAttribute('data-variant-sku');
+            const variantStock = element.getAttribute('data-variant-stock');
+            const variantPrice = element.getAttribute('data-variant-price');
+            
+            // Update hidden input
+            document.getElementById('selected-variant-id').value = variantId;
+            
+            // Update SKU and stock display
+            document.getElementById('variant-sku').textContent = variantSku;
+            document.getElementById('variant-stock').textContent = variantStock;
+            
+            // Update price display if variant has different price
+            if (variantPrice) {
+                const priceElement = document.querySelector('.price-text h3');
+                if (priceElement) {
+                    priceElement.innerHTML = '<span class="fw-normal">MRP:</span> ৳' + parseFloat(variantPrice).toFixed(2);
+                }
+            }
+            
+            // Store selected variant ID globally for cart
+            window.selectedVariantId = variantId;
+        }
+        
+        // Initialize default variant selection on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for active button variant
+            const defaultVariantBtn = document.querySelector('.variant-btn.active');
+            if (defaultVariantBtn) {
+                window.selectedVariantId = defaultVariantBtn.getAttribute('data-variant-id');
+            }
+            
+            // Check for checked radio variant
+            const defaultRadio = document.querySelector('input[type="radio"]:checked');
+            if (defaultRadio) {
+                window.selectedVariantId = defaultRadio.getAttribute('data-variant-id');
+            }
+            
+            // Check for selected dropdown variant
+            const defaultDropdown = document.querySelector('.variant-dropdown');
+            if (defaultDropdown) {
+                const selectedOption = defaultDropdown.options[defaultDropdown.selectedIndex];
+                window.selectedVariantId = selectedOption.getAttribute('data-variant-id');
+            }
+        });
     </script>
 @endsection

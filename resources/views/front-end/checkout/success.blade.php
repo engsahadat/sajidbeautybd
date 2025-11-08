@@ -18,15 +18,17 @@
       <div class="card-body">
         <h5 class="mb-3">Order Status</h5>
         <style>
-          .order-steps{display:flex;gap:12px;justify-content:space-between}
-          .order-step{flex:1;text-align:center}
-          .order-step .dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600}
+          .order-steps{display:flex;gap:12px;justify-content:space-between;position:relative}
+          .order-step{flex:1;text-align:center;position:relative}
+          .order-step .dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600;position:relative;z-index:2;margin:0 auto}
           .order-step.complete .dot{background:#22c55e;color:#fff}
           .order-step.current .dot{background:#0d6efd;color:#fff}
           .order-step.pending .dot{background:#e5e7eb;color:#6b7280}
           .order-step .label{display:block;margin-top:6px;font-size:.9rem}
-          .order-step .bar{height:4px;background:#e5e7eb;margin-top:10px;border-radius:2px;position:relative}
-          .order-step.complete .bar,.order-step.current .bar{background:#0d6efd}
+          .order-step::after{content:'';position:absolute;top:14px;left:50%;width:100%;height:4px;background:#e5e7eb;z-index:1}
+          .order-step:last-child::after{display:none}
+          .order-step.complete::after{background:#22c55e}
+          .order-step.current::after{background:linear-gradient(to right, #0d6efd 0%, #e5e7eb 100%)}
         </style>
         <div class="order-steps">
           @foreach($steps as $key=>$label)
@@ -43,9 +45,6 @@
             <div class="order-step {{ $state }}">
               <div class="dot">{{ $state==='complete' ? '✓' : ($loop->iteration) }}</div>
               <span class="label">{{ $label }}</span>
-              @if(!$loop->last)
-                <div class="bar"></div>
-              @endif
             </div>
           @endforeach
         </div>
@@ -70,7 +69,7 @@
                   @foreach($order->items as $it)
                     <tr>
                       <td>{{ $it->product_name }}</td>
-                      <td class="text-center">{{ $it->quantity }}</td>
+    </strong>                  <td class="text-center">{{ $it->quantity }}</td>
                       <td class="text-end">{{ number_format($it->unit_price,2) }}</td>
                       <td class="text-end">{{ number_format($it->total_price,2) }}</td>
                     </tr>

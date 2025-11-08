@@ -63,6 +63,17 @@
         </div>
       </a>
     </div>
+    <div class="col-md-4">
+      <a href="{{ route('admin.reports.stock-alert') }}" class="text-decoration-none">
+        <div class="card border-warning">
+          <div class="card-body text-center">
+            <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+            <h5 class="mt-2">Stock Alert Report</h5>
+            <p class="text-muted small mb-0">Low stock and out of stock products</p>
+          </div>
+        </div>
+      </a>
+    </div>
   </div>
 
   <hr class="my-4">

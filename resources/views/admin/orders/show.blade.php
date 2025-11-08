@@ -96,6 +96,7 @@
                 <thead>
                   <tr>
                     <th>Product</th>
+                    <th>Variant</th>
                     <th>SKU</th>
                     <th>Qty</th>
                     <th>Unit Price</th>
@@ -106,11 +107,20 @@
                 <tbody>
                   @foreach($order->items as $item)
                     <tr>
-                      <td>{{ $item->product_name }}</td>
+                      <td>
+                        <strong>{{ $item->product_name }}</strong>
+                      </td>
+                      <td>
+                        @if($item->variant_display)
+                          <span class="badge bg-info">{{ $item->variant_display }}</span>
+                        @else
+                          <span class="text-muted">-</span>
+                        @endif
+                      </td>
                       <td>{{ $item->product_sku }}</td>
                       <td>{{ $item->quantity }}</td>
-                      <td>{{ number_format($item->unit_price, 2) }}</td>
-                      <td>{{ number_format($item->total_price, 2) }}</td>
+                      <td>৳{{ number_format($item->unit_price, 2) }}</td>
+                      <td><strong>৳{{ number_format($item->total_price, 2) }}</strong></td>
                       <td>
                         <form action="{{ route('orders.items.destroy', [$order->id, $item->id]) }}" method="POST"
                           onsubmit="return confirm('Remove item?')">

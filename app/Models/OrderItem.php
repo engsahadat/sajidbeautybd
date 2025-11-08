@@ -11,6 +11,7 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'variant_id',
+        'variant_details',
         'product_name',
         'product_sku',
         'quantity',
@@ -34,5 +35,27 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    /**
+     * Get variant display text
+     */
+    public function getVariantDisplayAttribute(): ?string
+    {
+        if ($this->variant_id && $this->variant) {
+            return $this->variant->display_name;
+        }
+        if ($this->variant_details) {
+            $details = json_decode($this->variant_details, true);
+            if (is_array($details) && isset($details['name']) && isset($details['value'])) {
+                return $details['name'] . ': ' . $details['value'];
+            }
+        }
+        return null;
     }
 }

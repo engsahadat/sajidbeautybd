@@ -15,6 +15,7 @@ class Product extends Model
         'slug',
         'description',
         'short_description',
+        'product_type',
         'highlight',
         'skin_concern',
         'skin_type',
@@ -66,6 +67,16 @@ class Product extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(ProductReview::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
+    }
+
+    public function attributes(): HasMany
+    {
+        return $this->hasMany(ProductAttribute::class)->orderBy('sort_order');
     }
 
     public function getImageUrlAttribute(): string
@@ -161,5 +172,22 @@ class Product extends Model
             return (float) $this->sale_price;
         }
         return (float) $this->price;
+    }
+
+    /**
+     * Check if product has variants
+     */
+    public function hasVariants(): bool
+    {
+        return $this->variants()->count() > 0;
+    }
+
+    /**
+     * Get default variant
+     */
+    public function getDefaultVariant()
+    {
+        return $this->variants()->where('is_default', true)->first() 
+            ?? $this->variants()->first();
     }
 }

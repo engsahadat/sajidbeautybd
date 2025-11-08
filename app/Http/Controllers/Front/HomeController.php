@@ -45,12 +45,26 @@ class HomeController extends Controller
         return view('front-end.index', compact('categories', 'brands', 'homePages', 'sliderImages', 'bannerImages', 'middleImages', 'serviceImages', 'products', 'blogs'));
     }
     public function productDetails($id){
-        $product = Product::with(['brand', 'category', 'reviews'])
+        $product = Product::with([
+                'brand', 
+                'category', 
+                'reviews' => function($q) {
+                    $q->where('status', 'approved')->latest();
+                },
+                'variants' => function($q) {
+                    $q->orderBy('sort_order')->orderByDesc('id');
+                },
+                'attributes' => function($q) {
+                    $q->orderBy('attribute_group')->orderBy('sort_order');
+                }
+            ])
             ->where('id', $id)
             ->where('is_active', 1)
             ->firstOrFail();
-        $product->reviews_count = $product->reviews()->count();
-        return view('front-end.home.product-details', compact('product'));
+    $product->reviews_count = $product->reviews()->where('status', 'approved')->count();
+        $variantGroups = $product->variants ? $product->variants->groupBy('name') : collect();
+        $attributeGroups = $product->attributes ? $product->attributes->groupBy('attribute_group') : collect();
+        return view('front-end.home.product-details', compact('product','variantGroups','attributeGroups'));
     }
     public function allCategory(Request $request){
         $query = Category::where('is_active', 1)->where('status', 'active');

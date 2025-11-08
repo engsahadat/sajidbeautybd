@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Sajid Beauty BD is a beauty and cosmetics shop located at Shop No-95, Ground Floor, Shimanto Shambar Shopping Mall, Dhaka-1205.">
     <meta name="author" content="http://www.sajidbeautybd.com/">

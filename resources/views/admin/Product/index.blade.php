@@ -46,6 +46,14 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="form-group me-2 mb-2">
+                                @php($productTypes = ['' => __('All Types'),'skin' => 'Skin','hair' => 'Hair','face' => 'Face','body' => 'Body','makeup' => 'Makeup','fragrance' => 'Fragrance','tools' => 'Tools'])
+                                <select name="product_type" class="form-select">
+                                    @foreach($productTypes as $val => $label)
+                                        <option value="{{ $val }}" {{ request('product_type','') === (string)$val ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <button class="btn btn-primary me-2 mb-2" type="submit">{{ __('Search') }}</button>
                             <a class="btn btn-secondary mb-2" href="{{ route('products.index') }}">{{ __('Reset') }}</a>
                         </div>
@@ -64,6 +72,7 @@
                                     <th>{{ __('Image') }}</th>
                                     <th>{{ __('Name') }}</th>
                                     <th>{{ __('SKU') }}</th>
+                                    <th>{{ __('Type') }}</th>
                                     <th>{{ __('Price') }}</th>
                                     <th>{{ __('Sale Price') }}</th>
                                     <th>{{ __('Category') }}</th>
@@ -82,6 +91,7 @@
                                         </td>
                                         <td>{{ $product->name }}</td>
                                         <td>{{ $product->sku }}</td>
+                                        <td>{{ $product->product_type ? ucfirst($product->product_type) : '-' }}</td>
                                         <td>{{ number_format($product->price, 2) }}</td>
                                         <td>{{ number_format($product->sale_price, 2) }}</td>
                                         <td>{{ optional($product->category)->name }}</td>
@@ -91,6 +101,8 @@
                                         </td>
                                         <td>{{ $product->created_at }}</td>
                                         <td class="d-flex gap-2 align-items-center">
+                                            <a href="{{ route('products.variants.index', ['product' => $product->id]) }}" class="text-info" title="Manage Variants"><i class="fa fa-sliders"></i></a>
+                                            <a href="{{ route('products.attributes.index', ['product' => $product->id]) }}" class="text-warning" title="Manage Attributes"><i class="fa fa-list"></i></a>
                                             <a href="{{ route('products.reviews.view', ['product' => $product->id]) }}" title="Reviews"><i class="fa fa-comments"></i></a>
                                             <a href="{{ route('products.show', $product->id) }}" class="text-primary"><i class="fa fa-eye" title="View"></i></a>
                                             <a href="{{ route('products.edit', $product->id) }}" class="text-success"><i class="fa fa-edit" title="Edit"></i></a>

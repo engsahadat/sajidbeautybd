@@ -86,12 +86,21 @@ class CheckoutController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $ci->product_id,
+                    'variant_id' => $ci->variant_id,
+                    'variant_details' => $ci->variant_details,
                     'product_name' => $ci->product?->name ?? 'Product',
                     'product_sku' => $ci->product?->sku ?? 'SKU',
                     'quantity' => $qty,
                     'unit_price' => $unit,
                     'total_price' => number_format($unit * $qty, 2, '.', ''),
                 ]);
+                
+                // Reduce stock for variant or product
+                if ($ci->variant_id && $ci->variant) {
+                    $ci->variant->decrement('stock_quantity', $qty);
+                } elseif ($ci->product && $ci->product->manage_stock) {
+                    $ci->product->decrement('stock_quantity', $qty);
+                }
             }
             return $order;
         });

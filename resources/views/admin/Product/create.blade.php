@@ -36,6 +36,7 @@
                                 <div class="text-danger d-none error-message" id="slug-error"></div>
                             </div>
                         </div>
+                        
                     </div>
 
                     <div class="row">
@@ -144,14 +145,27 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="skin_concern" class="form-label">{{ __('Skin Concern') }}</label>
+                                <label for="product_type" class="form-label">{{ __('Product Type') }}</label>
+                                @php($productTypes = ['skin' => 'Skin','hair' => 'Hair','face' => 'Face','body' => 'Body','makeup' => 'Makeup','fragrance' => 'Fragrance','tools' => 'Tools'])
+                                <select name="product_type" id="product_type" class="form-select">
+                                    <option value="">{{ __('Select type (optional)') }}</option>
+                                    @foreach($productTypes as $val => $label)
+                                        <option value="{{ $val }}" {{ old('product_type') === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="text-danger d-none error-message" id="product_type-error"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label id="skin_concern_label" for="skin_concern" class="form-label">{{ __('Skin Concern') }}</label>
                                 <input type="text" name="skin_concern" id="skin_concern" class="form-control" value="{{ old('skin_concern') }}" placeholder="e.g., Redness, Itching">
                                 <div class="text-danger d-none error-message" id="skin_concern-error"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="skin_type" class="form-label">{{ __('Skin Type') }}</label>
+                                <label id="skin_type_label" for="skin_type" class="form-label">{{ __('Skin Type') }}</label>
                                 <input type="text" name="skin_type" id="skin_type" class="form-control" value="{{ old('skin_type') }}" placeholder="e.g., Sensitive Skin, All Skin Types">
                                 <div class="text-danger d-none error-message" id="skin_type-error"></div>
                             </div>
@@ -340,6 +354,62 @@ $(document).ready(function() {
         input.files = dt.files;
         renderGalleryPreviews(input.files);
     });
+
+    // Dynamic concern/type labels & placeholders based on product_type
+    const dynamicMap = {
+        skin: {
+            typeLabel: 'Skin Type',
+            concernLabel: 'Skin Concern',
+            typePh: 'e.g., Sensitive Skin, All Skin Types',
+            concernPh: 'e.g., Redness, Itching'
+        },
+        hair: {
+            typeLabel: 'Hair Type',
+            concernLabel: 'Hair Concern',
+            typePh: 'e.g., Dry, Oily, Curly, Normal',
+            concernPh: 'e.g., Hair Fall, Dandruff, Split Ends'
+        },
+        face: {
+            typeLabel: 'Face Type',
+            concernLabel: 'Face Concern',
+            typePh: 'e.g., Oily, Dry, Combination',
+            concernPh: 'e.g., Acne, Dark Spots, Wrinkles'
+        },
+        body: {
+            typeLabel: 'Body Skin Type',
+            concernLabel: 'Body Skin Concern',
+            typePh: 'e.g., Normal, Dry',
+            concernPh: 'e.g., Roughness, Dry Patches'
+        },
+        makeup: {
+            typeLabel: 'Makeup Type',
+            concernLabel: 'Makeup Focus',
+            typePh: 'e.g., Liquid Foundation, Powder, Cream',
+            concernPh: 'e.g., Long-wear, Full Coverage, Matte Finish'
+        },
+        fragrance: {
+            typeLabel: 'Fragrance Type',
+            concernLabel: 'Fragrance Notes',
+            typePh: 'e.g., Eau de Parfum, Eau de Toilette',
+            concernPh: 'e.g., Citrus, Woody, Floral'
+        },
+        tools: {
+            typeLabel: 'Tool Type',
+            concernLabel: 'Tool Use / Feature',
+            typePh: 'e.g., Brush, Sponge, Applicator',
+            concernPh: 'e.g., Soft Bristles, Precision Tip'
+        }
+    };
+    function updateDynamicLabels() {
+        const selected = ($('#product_type').val() || '').toLowerCase();
+        const map = dynamicMap[selected] || dynamicMap['skin'];
+        $('#skin_type_label').text(map.typeLabel);
+        $('#skin_concern_label').text(map.concernLabel);
+        $('#skin_type').attr('placeholder', map.typePh);
+        $('#skin_concern').attr('placeholder', map.concernPh);
+    }
+    $('#product_type').on('change', updateDynamicLabels);
+    updateDynamicLabels();
 });
 
 $('#product-submit').click(function (e) {

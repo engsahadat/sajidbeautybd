@@ -33,7 +33,7 @@
                             @if(!empty($settings['site_logo']) && file_exists(public_path($settings['site_logo'])))
                                 <img src="{{ asset($settings['site_logo']) }}" alt="Logo" style="max-height: 60px;">
                             @else
-                                <h2 class="mb-0">{{ $settings['site_name'] ?? 'Your Company' }}</h2>
+                                <h2 class="mb-0">{{ $settings['site_name'] ?? 'Sajid Beauty Bd' }}</h2>
                             @endif
                             <div class="mt-3">
                                 <p class="mb-1">
@@ -128,7 +128,7 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th width="5%">#</th>
-                                            <th width="45%">Product</th>
+                                            <th width="40%">Product</th>
                                             <th width="10%" class="text-center">SKU</th>
                                             <th width="10%" class="text-end">Unit Price</th>
                                             <th width="10%" class="text-center">Qty</th>
@@ -141,6 +141,9 @@
                                             <td>{{ $index + 1 }}</td>
                                             <td>
                                                 <strong>{{ $item->product_name }}</strong>
+                                                @if($item->variant_display)
+                                                    <br><small class="text-muted">{{ $item->variant_display }}</small>
+                                                @endif
                                             </td>
                                             <td class="text-center">{{ $item->product_sku ?? 'N/A' }}</td>
                                             <td class="text-end">{{ $order->currency ?? 'BDT' }} {{ number_format($item->unit_price, 2) }}</td>

@@ -179,6 +179,9 @@
                     <td>
                         <strong>{{ $item->product_name }}</strong><br>
                         <small style="color: #666;">SKU: {{ $item->product_sku }}</small>
+                        @if($item->variant_display)
+                            <br><small style="color: #0066cc;">{{ $item->variant_display }}</small>
+                        @endif
                     </td>
                     <td style="text-align: center;">{{ $item->quantity }}</td>
                     <td style="text-align: right;">৳{{ number_format($item->unit_price, 2) }}</td>

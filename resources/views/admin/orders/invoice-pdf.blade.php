@@ -148,7 +148,7 @@
     <!-- Header -->
     <div class="header clearfix">
         <div class="header-left">
-            <div class="company-name">{{ $settings['site_name'] ?? 'Your Company' }}</div>
+            <div class="company-name">{{ $settings['site_name'] ?? 'Sajib Beauty Bd' }}</div>
             @if(!empty($settings['site_address']))
                 <div>{{ $settings['site_address'] }}</div>
             @endif
@@ -235,7 +235,7 @@
         <thead>
             <tr>
                 <th width="5%">#</th>
-                <th width="45%">Product</th>
+                <th width="40%">Product</th>
                 <th width="10%" class="text-center">SKU</th>
                 <th width="10%" class="text-right">Unit Price</th>
                 <th width="10%" class="text-center">Qty</th>
@@ -246,7 +246,12 @@
             @foreach($order->items as $index => $item)
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td><strong>{{ $item->product_name }}</strong></td>
+                <td>
+                    <strong>{{ $item->product_name }}</strong>
+                    @if($item->variant_display)
+                        <br><small style="color: #666;">{{ $item->variant_display }}</small>
+                    @endif
+                </td>
                 <td class="text-center">{{ $item->product_sku ?? 'N/A' }}</td>
                 <td class="text-right">{{ $order->currency ?? 'BDT' }} {{ number_format($item->unit_price, 2) }}</td>
                 <td class="text-center">{{ $item->quantity }}</td>

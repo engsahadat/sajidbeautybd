@@ -1,0 +1,313 @@
+<?php
+
+namespace App\Services\SocialMedia;
+
+use App\Models\SocialMediaSetting;
+use App\Models\SocialMediaPage;
+use App\Models\SocialMediaPost;
+use App\Models\Product;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class SocialMediaService
+{
+    /**
+     * Get authorization URL for connecting a platform
+     */
+    public function getAuthorizationUrl($platform, $redirectUri)
+    {
+        $setting = SocialMediaSetting::where('platform', $platform)->first();
+
+        if (!$setting) {
+            throw new \Exception("Platform {$platform} is not configured");
+        }
+
+        switch ($platform) {
+            case SocialMediaSetting::PLATFORM_FACEBOOK:
+                return $this->getFacebookAuthUrl($setting, $redirectUri);
+            
+            case SocialMediaSetting::PLATFORM_TWITTER:
+                return $this->getTwitterAuthUrl($setting, $redirectUri);
+            
+            // Add other platforms as needed
+            default:
+                throw new \Exception("Platform {$platform} is not supported yet");
+        }
+    }
+
+    /**
+     * Get Facebook authorization URL
+     */
+    protected function getFacebookAuthUrl($setting, $redirectUri)
+    {
+        $permissions = 'pages_show_list,pages_read_engagement,pages_manage_posts,public_profile,email';
+        
+        return 'https://www.facebook.com/v18.0/dialog/oauth?' . http_build_query([
+            'client_id' => $setting->app_id,
+            'redirect_uri' => $redirectUri,
+            'scope' => $permissions,
+            'state' => csrf_token()
+        ]);
+    }
+
+    /**
+     * Handle OAuth callback and get access token
+     */
+    public function handleCallback($platform, $code, $redirectUri)
+    {
+        $setting = SocialMediaSetting::where('platform', $platform)->first();
+
+        if (!$setting) {
+            throw new \Exception("Platform {$platform} is not configured");
+        }
+
+        switch ($platform) {
+            case SocialMediaSetting::PLATFORM_FACEBOOK:
+                return $this->handleFacebookCallback($setting, $code, $redirectUri);
+            
+            // Add other platforms
+            default:
+                throw new \Exception("Platform {$platform} is not supported yet");
+        }
+    }
+
+    /**
+     * Handle Facebook OAuth callback
+     */
+    protected function handleFacebookCallback($setting, $code, $redirectUri)
+    {
+        // Exchange code for access token
+        $response = Http::get('https://graph.facebook.com/v18.0/oauth/access_token', [
+            'client_id' => $setting->app_id,
+            'client_secret' => $setting->app_secret,
+            'redirect_uri' => $redirectUri,
+            'code' => $code
+        ]);
+
+        if ($response->failed()) {
+            throw new \Exception('Failed to get access token from Facebook');
+        }
+
+        $data = $response->json();
+        
+        // Update setting with access token
+        $setting->update([
+            'access_token' => $data['access_token'],
+            'token_expires_at' => now()->addSeconds($data['expires_in'] ?? 5184000) // 60 days default
+        ]);
+
+        return $setting;
+    }
+
+    /**
+     * Fetch user's Facebook pages
+     */
+    public function fetchFacebookPages($setting)
+    {
+        $response = Http::get('https://graph.facebook.com/v18.0/me/accounts', [
+            'access_token' => $setting->access_token,
+            'fields' => 'id,name,access_token,picture,username'
+        ]);
+
+        if ($response->failed()) {
+            throw new \Exception('Failed to fetch Facebook pages');
+        }
+
+        $pages = $response->json()['data'] ?? [];
+        $connectedPages = [];
+
+        foreach ($pages as $pageData) {
+            $page = SocialMediaPage::updateOrCreate(
+                [
+                    'platform' => SocialMediaSetting::PLATFORM_FACEBOOK,
+                    'page_id' => $pageData['id']
+                ],
+                [
+                    'social_media_setting_id' => $setting->id,
+                    'page_name' => $pageData['name'],
+                    'page_username' => $pageData['username'] ?? null,
+                    'page_access_token' => $pageData['access_token'],
+                    'page_picture' => $pageData['picture']['data']['url'] ?? null,
+                    'page_url' => 'https://facebook.com/' . ($pageData['username'] ?? $pageData['id']),
+                    'is_connected' => true,
+                    'connected_at' => now()
+                ]
+            );
+
+            $connectedPages[] = $page;
+        }
+
+        return $connectedPages;
+    }
+
+    /**
+     * Share product to social media page
+     */
+    public function shareProduct(Product $product, SocialMediaPage $page, $message = null, $userId = null)
+    {
+        // Create post record
+        $post = SocialMediaPost::create([
+            'social_media_page_id' => $page->id,
+            'product_id' => $product->id,
+            'user_id' => $userId ?? auth()->id(),
+            'platform' => $page->platform,
+            'message' => $message ?? $this->generateDefaultMessage($product),
+            'status' => SocialMediaPost::STATUS_PENDING
+        ]);
+
+        try {
+            switch ($page->platform) {
+                case SocialMediaSetting::PLATFORM_FACEBOOK:
+                    return $this->shareToFacebook($product, $page, $post);
+                
+                // Add other platforms
+                default:
+                    throw new \Exception("Sharing to {$page->platform} is not supported yet");
+            }
+        } catch (\Exception $e) {
+            $post->update([
+                'status' => SocialMediaPost::STATUS_FAILED,
+                'error_message' => $e->getMessage()
+            ]);
+            
+            throw $e;
+        }
+    }
+
+    /**
+     * Share product to Facebook page
+     */
+    protected function shareToFacebook(Product $product, SocialMediaPage $page, SocialMediaPost $post)
+    {
+        $productUrl = url('/product-details/' . $product->id);
+        $imageUrl = $product->image_url ?? null;
+
+        $postData = [
+            'access_token' => $page->page_access_token,
+            'message' => $post->message,
+            'link' => $productUrl
+        ];
+
+        // If we have an image, use photo endpoint
+        if ($imageUrl && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            $response = Http::post("https://graph.facebook.com/v18.0/{$page->page_id}/photos", [
+                'access_token' => $page->page_access_token,
+                'url' => $imageUrl,
+                'caption' => $post->message . "\n\n" . $productUrl
+            ]);
+        } else {
+            // Otherwise use feed endpoint
+            $response = Http::post("https://graph.facebook.com/v18.0/{$page->page_id}/feed", $postData);
+        }
+
+        if ($response->failed()) {
+            throw new \Exception('Failed to post to Facebook: ' . $response->body());
+        }
+
+        $responseData = $response->json();
+
+        // Update post with success info
+        $post->update([
+            'status' => SocialMediaPost::STATUS_PUBLISHED,
+            'post_id' => $responseData['id'] ?? $responseData['post_id'] ?? null,
+            'post_url' => "https://facebook.com/{$page->page_id}/posts/" . ($responseData['id'] ?? ''),
+            'published_at' => now(),
+            'media_urls' => $imageUrl ? [$imageUrl] : null
+        ]);
+
+        return $post;
+    }
+
+    /**
+     * Generate default message for product
+     */
+    protected function generateDefaultMessage(Product $product)
+    {
+        $message = "🛍️ {$product->name}\n\n";
+        
+        if ($product->description) {
+            $description = strip_tags($product->description);
+            $message .= substr($description, 0, 200);
+            if (strlen($description) > 200) {
+                $message .= '...';
+            }
+            $message .= "\n\n";
+        }
+
+        $message .= "💰 Price: ৳" . number_format($product->price, 2) . "\n";
+        
+        if ($product->stock_quantity > 0) {
+            $message .= "✅ In Stock\n";
+        }
+
+        $message .= "\n🔗 Shop now!";
+
+        return $message;
+    }
+
+    /**
+     * Disconnect a social media page
+     */
+    public function disconnectPage(SocialMediaPage $page)
+    {
+        $page->update([
+            'is_connected' => false,
+            'page_access_token' => null
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Get post analytics (if supported by platform)
+     */
+    public function getPostAnalytics(SocialMediaPost $post)
+    {
+        if (!$post->post_id || $post->status !== SocialMediaPost::STATUS_PUBLISHED) {
+            return null;
+        }
+
+        try {
+            switch ($post->platform) {
+                case SocialMediaSetting::PLATFORM_FACEBOOK:
+                    return $this->getFacebookPostAnalytics($post);
+                
+                default:
+                    return null;
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to get post analytics: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get Facebook post analytics
+     */
+    protected function getFacebookPostAnalytics(SocialMediaPost $post)
+    {
+        $response = Http::get("https://graph.facebook.com/v18.0/{$post->post_id}", [
+            'access_token' => $post->page->page_access_token,
+            'fields' => 'shares,likes.summary(true),comments.summary(true),reactions.summary(true)'
+        ]);
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        $data = $response->json();
+
+        $analytics = [
+            'likes' => $data['likes']['summary']['total_count'] ?? 0,
+            'comments' => $data['comments']['summary']['total_count'] ?? 0,
+            'shares' => $data['shares']['count'] ?? 0,
+            'reactions' => $data['reactions']['summary']['total_count'] ?? 0,
+            'fetched_at' => now()->toDateTimeString()
+        ];
+
+        // Save analytics to post
+        $post->update(['analytics' => $analytics]);
+
+        return $analytics;
+    }
+}

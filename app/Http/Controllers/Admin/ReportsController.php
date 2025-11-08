@@ -777,4 +777,163 @@ class ReportsController extends Controller
         
         return $pdf->download($filename . '.pdf');
     }
+
+    public function stockAlert(Request $request)
+    {
+        $threshold = $request->query('threshold', 1);
+        $category = $request->query('category');
+        
+        // Get categories for filter
+        $categories = \App\Models\Category::where('is_active', 1)->orderBy('name')->get(['id', 'name']);
+
+        // Get products with low stock
+        $query = \App\Models\Product::select(
+                'products.id',
+                'products.name',
+                'products.sku',
+                'products.stock_quantity',
+                'products.price',
+                'products.is_active',
+                'categories.name as category_name'
+            )
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('products.stock_quantity', '<=', $threshold);
+
+        if ($category) {
+            $query->where('products.category_id', $category);
+        }
+
+        $lowStockProducts = (clone $query)->orderBy('products.stock_quantity', 'asc')->get();
+
+        // Get products with variants that have low stock
+        $lowStockVariants = \App\Models\ProductVariant::select(
+                'product_variants.id',
+                'product_variants.name as variant_name',
+                'product_variants.value as variant_value',
+                'product_variants.stock_quantity',
+                'product_variants.sku',
+                'products.id as product_id',
+                'products.name as product_name',
+                'categories.name as category_name'
+            )
+            ->join('products', 'product_variants.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('product_variants.stock_quantity', '<=', $threshold);
+
+        if ($category) {
+            $lowStockVariants->where('products.category_id', $category);
+        }
+
+        $lowStockVariants = $lowStockVariants->orderBy('product_variants.stock_quantity', 'asc')->get();
+
+        // Summary statistics
+        $totalLowStock = $lowStockProducts->count();
+        $totalOutOfStock = \App\Models\Product::where('stock_quantity', '<=', 0)->count();
+        $totalVariantsLowStock = \App\Models\ProductVariant::where('stock_quantity', '<=', $threshold)->count();
+        $totalVariantsOutOfStock = \App\Models\ProductVariant::where('stock_quantity', '<=', 0)->count();
+        
+        // Products that need urgent restock (0 stock)
+        $urgentProducts = \App\Models\Product::where('stock_quantity', '<=', 0)
+            ->where('is_active', 1)
+            ->count();
+
+        return view('admin.reports.stock-alert', compact(
+            'threshold',
+            'category',
+            'categories',
+            'lowStockProducts',
+            'lowStockVariants',
+            'totalLowStock',
+            'totalOutOfStock',
+            'totalVariantsLowStock',
+            'totalVariantsOutOfStock',
+            'urgentProducts'
+        ));
+    }
+
+    public function exportStockAlert(Request $request)
+    {
+        $format = $request->query('format', 'csv');
+        $threshold = $request->query('threshold', 1);
+        $category = $request->query('category');
+
+        // Get products with low stock
+        $query = \App\Models\Product::select(
+                'products.name',
+                'products.sku',
+                'products.stock_quantity',
+                'products.price',
+                'products.is_active',
+                'categories.name as category_name'
+            )
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('products.stock_quantity', '<=', $threshold);
+
+        if ($category) {
+            $query->where('products.category_id', $category);
+        }
+
+        $products = $query->orderBy('products.stock_quantity', 'asc')->get();
+
+        // Get variants with low stock
+        $variants = \App\Models\ProductVariant::select(
+                'product_variants.name as variant_name',
+                'product_variants.value as variant_value',
+                'product_variants.stock_quantity',
+                'product_variants.sku',
+                'products.name as product_name',
+                'categories.name as category_name'
+            )
+            ->join('products', 'product_variants.product_id', '=', 'products.id')
+            ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->where('product_variants.stock_quantity', '<=', $threshold);
+
+        if ($category) {
+            $variants->where('products.category_id', $category);
+        }
+
+        $variants = $variants->orderBy('product_variants.stock_quantity', 'asc')->get();
+
+        // Combine products and variants
+        $data = collect();
+
+        foreach ($products as $product) {
+            $data->push([
+                'type' => 'Product',
+                'name' => $product->name,
+                'variant' => '-',
+                'category' => $product->category_name ?? 'N/A',
+                'sku' => $product->sku,
+                'stock' => $product->stock_quantity,
+                'price' => number_format($product->price, 2),
+                'status' => $product->is_active ? 'Active' : 'Inactive'
+            ]);
+        }
+
+        foreach ($variants as $variant) {
+            $data->push([
+                'type' => 'Variant',
+                'name' => $variant->product_name,
+                'variant' => $variant->variant_name . ': ' . $variant->variant_value,
+                'category' => $variant->category_name ?? 'N/A',
+                'sku' => $variant->sku,
+                'stock' => $variant->stock_quantity,
+                'price' => '-',
+                'status' => '-'
+            ]);
+        }
+
+        $filename = 'stock_alert_report_' . now()->format('Y-m-d_His');
+        
+        return $this->generateExport($data, $filename, $format, [
+            'type' => 'Type',
+            'name' => 'Product Name',
+            'variant' => 'Variant',
+            'category' => 'Category',
+            'sku' => 'SKU',
+            'stock' => 'Stock',
+            'price' => 'Price',
+            'status' => 'Status'
+        ]);
+    }
 }

@@ -12,11 +12,14 @@ use App\Http\Controllers\Admin\OrderItemController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductVariantController;
+use App\Http\Controllers\Admin\ProductAttributeController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Admin\SocialMediaController;
 use App\Http\Controllers\Admin\HomePageController;
 use App\Http\Controllers\Front\BlogController as FrontBlogController;
 use App\Http\Controllers\Front\CartController;
@@ -24,6 +27,7 @@ use App\Http\Controllers\Front\CheckoutController;
 use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\PaymentController as FrontPaymentController;
 use App\Http\Controllers\Front\MyOrdersController;
+use App\Http\Controllers\Front\ProductReviewController as FrontProductReviewController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +55,33 @@ Route::prefix('admin')->group(function () {
         Route::resource('brands', BrandController::class);
         // Product Routes
         Route::resource('products', ProductController::class);
+        // Product Variant Routes (following category pattern)
+        Route::prefix('products/{product}/variants')->name('products.variants.')->group(function () {
+            Route::get('/', [ProductVariantController::class, 'index'])->name('index');
+            Route::get('/create', [ProductVariantController::class, 'create'])->name('create');
+            Route::post('/', [ProductVariantController::class, 'store'])->name('store');
+            Route::get('/{variant}', [ProductVariantController::class, 'show'])->name('show');
+            Route::get('/{variant}/edit', [ProductVariantController::class, 'edit'])->name('edit');
+            Route::put('/{variant}', [ProductVariantController::class, 'update'])->name('update');
+            Route::delete('/{variant}', [ProductVariantController::class, 'destroy'])->name('destroy');
+        });
+        // Product Attribute Routes
+        Route::prefix('products/{product}/attributes')->name('products.attributes.')->group(function () {
+            Route::get('/', [ProductAttributeController::class, 'index'])->name('index');
+            Route::get('/create', [ProductAttributeController::class, 'create'])->name('create');
+            Route::post('/', [ProductAttributeController::class, 'store'])->name('store');
+            Route::get('/{attribute}', [ProductAttributeController::class, 'show'])->name('show');
+            Route::get('/{attribute}/edit', [ProductAttributeController::class, 'edit'])->name('edit');
+            Route::put('/{attribute}', [ProductAttributeController::class, 'update'])->name('update');
+            Route::delete('/{attribute}', [ProductAttributeController::class, 'destroy'])->name('destroy');
+        });
+        //product Routes
+        Route::controller(ProductController::class)->group(function () {
+            Route::get('products/reviews', 'reviews')->name('products.reviews.index');
+            Route::get('products/{product}/reviews', 'reviews')->name('products.reviews.view');
+            Route::delete('products/{product}/reviews/{review}', 'deleteReview')->name('products.reviews.destroy');
+        });
+        
         // User Routes
         Route::resource('users', UserController::class);
         // Home Pages CRUD
@@ -68,12 +99,6 @@ Route::prefix('admin')->group(function () {
         // Orders Routes
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'edit', 'update']);
         Route::get('orders/{order}/invoice', [OrderController::class, 'invoice'])->name('orders.invoice');
-        //product Routes
-        Route::controller(ProductController::class)->group(function () {
-            Route::get('products/reviews', 'reviews')->name('products.reviews.index');
-            Route::get('products/{product}/reviews', 'reviews')->name('products.reviews.view');
-            Route::delete('products/{product}/reviews/{review}', 'deleteReview')->name('products.reviews.destroy');
-        });
         
         Route::prefix('orders/{order}')->name('orders.')->group(function () {
             Route::post('items', [OrderItemController::class, 'store'])->name('items.store');
@@ -96,6 +121,7 @@ Route::prefix('admin')->group(function () {
         Route::get('reports/customers', [ReportsController::class, 'customers'])->name('admin.reports.customers');
         Route::get('reports/payments', [ReportsController::class, 'payments'])->name('admin.reports.payments');
         Route::get('reports/orders', [ReportsController::class, 'orders'])->name('admin.reports.orders');
+        Route::get('reports/stock-alert', [ReportsController::class, 'stockAlert'])->name('admin.reports.stock-alert');
         
         // Report exports
         Route::get('reports/sales/export', [ReportsController::class, 'exportSales'])->name('admin.reports.sales.export');
@@ -103,6 +129,19 @@ Route::prefix('admin')->group(function () {
         Route::get('reports/customers/export', [ReportsController::class, 'exportCustomers'])->name('admin.reports.customers.export');
         Route::get('reports/payments/export', [ReportsController::class, 'exportPayments'])->name('admin.reports.payments.export');
         Route::get('reports/orders/export', [ReportsController::class, 'exportOrders'])->name('admin.reports.orders.export');
+        Route::get('reports/stock-alert/export', [ReportsController::class, 'exportStockAlert'])->name('admin.reports.stock-alert.export');
+
+        // Social Media Routes
+        Route::get('social-media/settings', [SocialMediaController::class, 'settings'])->name('admin.social-media.settings');
+        Route::post('social-media/settings', [SocialMediaController::class, 'updateSettings'])->name('admin.social-media.settings.update');
+        Route::get('social-media/connect-pages', [SocialMediaController::class, 'connectPages'])->name('admin.social-media.connect-pages');
+        Route::get('social-media/connect/{platform}', [SocialMediaController::class, 'initiateConnection'])->name('admin.social-media.connect');
+        Route::get('social-media/callback/{platform}', [SocialMediaController::class, 'handleCallback'])->name('admin.social-media.callback');
+        Route::delete('social-media/pages/{page}', [SocialMediaController::class, 'disconnectPage'])->name('admin.social-media.disconnect');
+        Route::get('social-media/products', [SocialMediaController::class, 'products'])->name('admin.social-media.products');
+        Route::post('social-media/share', [SocialMediaController::class, 'shareProduct'])->name('admin.social-media.share');
+        Route::get('social-media/posts', [SocialMediaController::class, 'posts'])->name('admin.social-media.posts');
+        Route::post('social-media/posts/{post}/analytics', [SocialMediaController::class, 'refreshAnalytics'])->name('admin.social-media.posts.analytics');
     });
 });
 
@@ -131,6 +170,11 @@ Route::middleware('front')->controller(HomeController::class)->group(function ()
 Route::controller(FrontBlogController::class)->group(function () {
     Route::get('/blogs', 'index')->name('front.blog.index');
     Route::get('/blogs/{id}', 'show')->name('front.blog.show');
+});
+
+// Product reviews (front-end)
+Route::middleware(['front','auth'])->group(function () {
+    Route::post('/product-details/{product}/reviews', [FrontProductReviewController::class, 'store'])->name('front.reviews.store');
 });
 
 // Cart routes (front-end)

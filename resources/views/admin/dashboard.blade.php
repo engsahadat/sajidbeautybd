@@ -334,7 +334,7 @@
   <!-- Recent Orders & Low Stock -->
   <div class="row g-4 mb-4">
     <!-- Recent Orders -->
-    <div class="col-lg-7">
+    <div class="col-lg-12">
       <div class="card modern-card border-0 shadow-hover">
         <div class="card-header bg-transparent border-0 py-3 px-4">
           <div class="d-flex justify-content-between align-items-center">
@@ -407,59 +407,6 @@
                 @endforelse
               </tbody>
             </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Low Stock Alert -->
-    <div class="col-lg-5">
-      <div class="card modern-card border-0 shadow-hover">
-        <div class="card-header bg-transparent border-0 py-3 px-4">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <h5 class="mb-1 fw-bold" style="color: #1a1a2e;">
-                <i class="ri-alert-line me-2 text-danger"></i>Low Stock Alert
-              </h5>
-              <p class="text-muted small mb-0">Products need restocking</p>
-            </div>
-            <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-danger rounded-pill px-3">
-              <i class="ri-tools-line"></i> Manage
-            </a>
-          </div>
-        </div>
-        <div class="card-body p-0">
-          <div class="list-group list-group-flush">
-            @forelse($lowStockProducts as $product)
-              <div class="list-group-item border-0 px-4 py-3 hover-bg-light">
-                <div class="d-flex align-items-center">
-                  @if($product->image && file_exists(public_path('images/products/' . $product->image)))
-                    <img src="{{ asset('images/products/' . $product->image) }}" 
-                         alt="{{ $product->name }}" 
-                         class="rounded-3 shadow-sm me-3" 
-                         style="width: 55px; height: 55px; object-fit: cover;">
-                  @else
-                    <div class="bg-light rounded-3 me-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
-                      <i class="ri-image-line text-secondary fs-5"></i>
-                    </div>
-                  @endif
-                  <div class="flex-grow-1">
-                    <div class="fw-semibold mb-1" style="color: #1a1a2e;">{{ Str::limit($product->name, 25) }}</div>
-                    <small class="text-muted"><i class="ri-barcode-line"></i> SKU: {{ $product->sku }}</small>
-                  </div>
-                  <div class="text-end ms-2">
-                    <div class="badge bg-danger text-white px-3 py-2 rounded-pill">
-                      <i class="ri-error-warning-line"></i> {{ $product->stock_quantity }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            @empty
-              <div class="list-group-item border-0 text-center py-5 text-muted">
-                <i class="ri-checkbox-circle-line fs-1 d-block mb-3 text-success"></i>
-                <p class="mb-0 fw-semibold">All products are well stocked!</p>
-              </div>
-            @endforelse
           </div>
         </div>
       </div>

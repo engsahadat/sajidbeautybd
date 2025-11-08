@@ -25,6 +25,7 @@ class ProductRequest extends FormRequest
             'brand_id' => ['nullable', 'exists:brands,id'],
             'description' => ['nullable', 'string'],
             'short_description' => ['nullable', 'string'],
+            'product_type' => ['nullable', 'string', 'max:50'],
             'highlight' => ['nullable', 'string'],
             'skin_concern' => ['nullable', 'string', 'max:255'],
             'skin_type' => ['nullable', 'string', 'max:255'],

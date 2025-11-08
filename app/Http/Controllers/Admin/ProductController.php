@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductReview;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Container\Attributes\Log;
 
@@ -29,6 +30,7 @@ class ProductController extends Controller
                 'sale_price',
                 'category_id',
                 'brand_id',
+                'product_type',
                 'stock_quantity',
                 'is_active',
                 'image',
@@ -56,6 +58,10 @@ class ProductController extends Controller
             // Apply brand filter
             if ($request->filled('brand_id')) {
                 $query->where('brand_id', $request->input('brand_id'));
+            }
+            // Apply product type filter
+            if ($request->filled('product_type')) {
+                $query->where('product_type', $request->input('product_type'));
             }
 
             // Paginate products
@@ -341,6 +347,183 @@ class ProductController extends Controller
             return redirect()->back()->with('message', 'Review deleted successfully.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to delete review.');
+        }
+    }
+
+    /**
+     * Display variant management for a specific product
+     * Route: GET /admin/products/{product}/variants
+     */
+    public function variantIndex(Product $product)
+    {
+        try {
+            $variants = $product->variants()->orderBy('sort_order')->get();
+            return view('admin.Product.variants', compact('product', 'variants'));
+        } catch (\Exception $e) {
+            return redirect()->route('products.index')->with('error', 'Failed to load product variants.');
+        }
+    }
+
+    /**
+     * Store a new variant for a product
+     * Route: POST /admin/products/{product}/variants
+     */
+    public function variantStore(Request $request, Product $product)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'value' => 'required|string|max:100',
+                'sku' => 'nullable|string|max:50|unique:product_variants,sku',
+                'price' => 'nullable|numeric|min:0',
+                'stock_quantity' => 'required|integer|min:0',
+                'is_default' => 'boolean',
+                'image' => 'nullable|image|max:2048',
+                'sort_order' => 'nullable|integer',
+            ]);
+
+            $validated['product_id'] = $product->id;
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $uniqueFileName = time() . '_' . $image->getClientOriginalName();
+                $destinationPath = public_path('images/variant');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                $image->move($destinationPath, $uniqueFileName);
+                $validated['image'] = 'images/variant/' . $uniqueFileName;
+            }
+
+            // If this is set as default, unset other defaults
+            if (!empty($validated['is_default'])) {
+                ProductVariant::where('product_id', $product->id)
+                    ->update(['is_default' => false]);
+            }
+
+            $variant = ProductVariant::create($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Variant created successfully.',
+                'data' => $variant,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create variant.',
+                'errors' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update a variant
+     * Route: PUT /admin/products/{product}/variants/{variant}
+     */
+    public function variantUpdate(Request $request, Product $product, ProductVariant $variant)
+    {
+        try {
+            // Ensure variant belongs to this product
+            if ($variant->product_id !== $product->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Variant does not belong to this product.'
+                ], 400);
+            }
+
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'value' => 'required|string|max:100',
+                'sku' => 'nullable|string|max:50|unique:product_variants,sku,' . $variant->id,
+                'price' => 'nullable|numeric|min:0',
+                'stock_quantity' => 'required|integer|min:0',
+                'is_default' => 'boolean',
+                'image' => 'nullable|image|max:2048',
+                'sort_order' => 'nullable|integer',
+                'remove_image' => 'boolean',
+            ]);
+
+            // Handle image removal
+            if ($request->boolean('remove_image') && $variant->image) {
+                $path = public_path($variant->image);
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+                $variant->image = null;
+            }
+
+            // Handle new image upload
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $uniqueFileName = time() . '_' . $image->getClientOriginalName();
+                $destinationPath = public_path('images/variant');
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                $image->move($destinationPath, $uniqueFileName);
+                $validated['image'] = 'images/variant/' . $uniqueFileName;
+            }
+
+            // If this is set as default, unset other defaults
+            if (!empty($validated['is_default']) && !$variant->is_default) {
+                ProductVariant::where('product_id', $product->id)
+                    ->where('id', '!=', $variant->id)
+                    ->update(['is_default' => false]);
+            }
+
+            $variant->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Variant updated successfully.',
+                'data' => $variant,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update variant.',
+                'errors' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a variant
+     * Route: DELETE /admin/products/{product}/variants/{variant}
+     */
+    public function variantDestroy(Product $product, ProductVariant $variant)
+    {
+        try {
+            // Ensure variant belongs to this product
+            if ($variant->product_id !== $product->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Variant does not belong to this product.'
+                ], 400);
+            }
+
+            // Delete variant image if exists
+            if ($variant->image) {
+                $path = public_path($variant->image);
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+            }
+
+            $variant->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Variant deleted successfully.',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete variant.',
+                'errors' => $e->getMessage()
+            ], 500);
         }
     }
 }
