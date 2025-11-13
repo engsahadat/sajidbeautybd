@@ -128,7 +128,6 @@ class CheckoutController extends Controller
                 } 
             }
             $cart->items()->delete();
-            // Send notifications after successful order
             $this->sendOrderNotifications($order);
             $redirect = route('checkout.success', $order->order_number);
         } elseif (in_array($method, ['sslcommerz','bkash'])) {
@@ -158,23 +157,11 @@ class CheckoutController extends Controller
      */
     protected function sendOrderNotifications(Order $order): void
     {
-        // Load order relationships
         $order->load('items.product', 'user');
-        
-        // Use Brevo API for reliable email delivery
         $brevoMail = new \App\Services\BrevoMailService();
-        
-        // 1. Send email to customer
         try {
             if ($order->user && $order->user->email) {
-                $sent = $brevoMail->sendOrderConfirmation($order);
-                
-                if ($sent) {
-                    Log::info('Customer email sent successfully (Brevo API)', [
-                        'order_id' => $order->id,
-                        'customer_email' => $order->user->email
-                    ]);
-                }
+                $brevoMail->sendOrderConfirmation($order);
             }
         } catch (\Exception $e) {
             Log::error('Customer email failed:', [
@@ -185,14 +172,7 @@ class CheckoutController extends Controller
         
         // 2. Send email to shop owner
         try {
-            $sent = $brevoMail->sendOrderNotificationToShop($order);
-            
-            if ($sent) {
-                Log::info('Shop owner email sent successfully (Brevo API)', [
-                    'order_id' => $order->id,
-                    'shop_email' => 'sajidbeautybd@gmail.com'
-                ]);
-            }
+            $brevoMail->sendOrderNotificationToShop($order);
         } catch (\Exception $e) {
             Log::error('Shop owner email failed:', [
                 'order_id' => $order->id,

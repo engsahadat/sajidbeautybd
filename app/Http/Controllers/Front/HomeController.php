@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Front;
 
+use \App\Services\BrevoMailService;
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
 use App\Models\Brand;
@@ -61,7 +62,7 @@ class HomeController extends Controller
             ->where('id', $id)
             ->where('is_active', 1)
             ->firstOrFail();
-    $product->reviews_count = $product->reviews()->where('status', 'approved')->count();
+        $product->reviews_count = $product->reviews()->where('status', 'approved')->count();
         $variantGroups = $product->variants ? $product->variants->groupBy('name') : collect();
         $attributeGroups = $product->attributes ? $product->attributes->groupBy('attribute_group') : collect();
         return view('front-end.home.product-details', compact('product','variantGroups','attributeGroups'));
@@ -97,18 +98,12 @@ class HomeController extends Controller
                   ->orWhere('description', 'like', "%{$search}%");
             });
         }
-
-        // Category filter
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
-
-        // Brand filter
         if ($request->filled('brand_id')) {
             $query->where('brand_id', $request->brand_id);
         }
-
-        // Sorting
         $sort = $request->get('sort', 'latest');
         switch ($sort) {
             case 'price_low':
@@ -215,7 +210,7 @@ class HomeController extends Controller
         ]);
         
         // Store contact message in database
-        $stored = ContactMessage::create($data + [
+        ContactMessage::create($data + [
             'meta' => [
                 'ip' => $request->ip(),
                 'user_agent' => substr((string)$request->userAgent(),0,255),
@@ -227,16 +222,8 @@ class HomeController extends Controller
         
         try {
             // Use Brevo API for reliable email delivery
-            $brevoMail = new \App\Services\BrevoMailService();
+            $brevoMail = new BrevoMailService();
             $mailSent = $brevoMail->sendContactMessage($data);
-            
-            if ($mailSent) {
-                Log::info('Contact form email sent successfully (Brevo API)', [
-                    'from' => $data['email'],
-                    'subject' => $data['subject']
-                ]);
-            }
-            
         } catch(\Throwable $e) {
             $mailSent = false;
             Log::error('Contact mail failed:', [

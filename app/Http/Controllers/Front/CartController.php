@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\Front;
 
+use \Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Controller;
 use App\Models\CartItem;
+use App\Models\Compare;
+use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShoppingCart;
-use App\Models\Coupon;
 use App\Models\WishlistItem;
-use App\Models\Compare;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
@@ -20,7 +21,7 @@ class CartController extends Controller
     protected function getOrCreateCart(): ShoppingCart
     {
         $sessionId = session()->getId();
-    $userId = Auth::id();
+        $userId = Auth::id();
         $cart = ShoppingCart::forCurrent()->first();
         if (!$cart) {
             $cart = ShoppingCart::create([
@@ -28,7 +29,6 @@ class CartController extends Controller
                 'session_id' => $userId ? null : $sessionId,
             ]);
         } else if ($userId && !$cart->user_id) {
-            // Attach session cart to user when logged in
             $cart->user_id = $userId;
             $cart->session_id = null;
             $cart->save();
@@ -65,38 +65,25 @@ class CartController extends Controller
             $product = Product::findOrFail($data['product_id']);
             $variant = null;
             $variantDetails = null;
-            
-            // Handle variant if provided
             if (!empty($data['variant_id'])) {
                 $variant = ProductVariant::findOrFail($data['variant_id']);
-                
-                // Ensure variant belongs to the product
                 if ($variant->product_id !== $product->id) {
                     throw new \Exception('Invalid variant for this product');
                 }
-                
-                // Check variant stock
                 if ($variant->stock_quantity < $qty) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Insufficient stock for selected variant'
                     ], 400);
                 }
-                
-                // Store variant details as JSON for order history
                 $variantDetails = json_encode([
                     'name' => $variant->name,
                     'value' => $variant->value,
                     'sku' => $variant->sku,
                 ]);
-                
-                // Use variant price if available, otherwise product price
                 $unitPrice = $variant->effective_price;
             } else {
-                // Use the effective price (sale_price if available, otherwise regular price)
                 $unitPrice = $product->effective_price;
-                
-                // Check product stock if no variant
                 if ($product->manage_stock && $product->stock_quantity < $qty) {
                     return response()->json([
                         'success' => false,
@@ -104,8 +91,6 @@ class CartController extends Controller
                     ], 400);
                 }
             }
-
-            // Check if item with same product and variant already exists
             $item = $cart->items()
                 ->where('product_id', $product->id)
                 ->where('variant_id', $data['variant_id'] ?? null)
@@ -113,8 +98,6 @@ class CartController extends Controller
 
             if ($item) {
                 $newQty = $item->quantity + $qty;
-                
-                // Check stock for updated quantity
                 if ($variant) {
                     if ($variant->stock_quantity < $newQty) {
                         return response()->json([
@@ -130,7 +113,7 @@ class CartController extends Controller
                 }
                 
                 $item->quantity = $newQty;
-                $item->unit_price = $unitPrice; // ensure latest price
+                $item->unit_price = $unitPrice;
                 $item->save();
             } else {
                 $cart->items()->create([
@@ -154,7 +137,7 @@ class CartController extends Controller
 
             return back()->with('message','Added to cart');
             
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -236,8 +219,6 @@ class CartController extends Controller
         if ($coupon->minimum_amount && $subtotal < (float)$coupon->minimum_amount) {
             return back()->with('error', 'Minimum order amount not met for this coupon.');
         }
-
-        // Optionally enforce per-customer limits (skipped for brevity unless there is a pivot)
         $discount = $coupon->discountForTotal($subtotal);
         if ($discount <= 0) {
             return back()->with('error', 'This coupon does not apply to your cart.');

@@ -69,18 +69,7 @@ class PaymentController extends Controller
     {
         $gateway = strtolower($gateway);
         $orderId = $request->input('order_id');
-
-        if (!$orderId) {
-            Log::error('Payment callback without order_id', ['gateway' => $gateway, 'data' => $request->all()]);
-            return redirect()->route('home')->with('error', 'Invalid payment callback.');
-        }
-
         $order = Order::find($orderId);
-        if (!$order) {
-            Log::error('Payment callback for non-existent order', ['order_id' => $orderId]);
-            return redirect()->route('home')->with('error', 'Order not found.');
-        }
-
         try {
             $verified = false;
             $transactionId = null;
@@ -146,10 +135,8 @@ class PaymentController extends Controller
                 } catch (\Throwable $e) {
                     Log::error('Failed to clear cart after payment', ['error' => $e->getMessage()]);
                 }
-                
                 // Send order notifications after successful payment
                 $this->sendOrderNotifications($order);
-                
                 return redirect()->route('checkout.success', $order->order_number)
                     ->with('success', 'Payment completed successfully!');
             }
@@ -201,8 +188,6 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             Log::error('Failed to clear cart after demo payment', ['error' => $e->getMessage()]);
         }
-        
-        // Send order notifications after successful demo payment
         $this->sendOrderNotifications($order);
         
         return redirect()->route('checkout.success', $order->order_number);
@@ -216,23 +201,11 @@ class PaymentController extends Controller
      */
     protected function sendOrderNotifications(Order $order): void
     {
-        // Load order relationships
         $order->load('items.product', 'user');
-        
-        // Use Brevo API for reliable email delivery
         $brevoMail = new \App\Services\BrevoMailService();
-        
-        // 1. Send email to customer
         try {
             if ($order->user && $order->user->email) {
                 $sent = $brevoMail->sendOrderConfirmation($order);
-                
-                if ($sent) {
-                    Log::info('Customer email sent successfully (Brevo API)', [
-                        'order_id' => $order->id,
-                        'customer_email' => $order->user->email
-                    ]);
-                }
             }
         } catch (\Exception $e) {
             Log::error('Customer email failed:', [
@@ -240,17 +213,9 @@ class PaymentController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
-        
         // 2. Send email to shop owner
         try {
             $sent = $brevoMail->sendOrderNotificationToShop($order);
-            
-            if ($sent) {
-                Log::info('Shop owner email sent successfully (Brevo API)', [
-                    'order_id' => $order->id,
-                    'shop_email' => 'sajidbeautybd@gmail.com'
-                ]);
-            }
         } catch (\Exception $e) {
             Log::error('Shop owner email failed:', [
                 'order_id' => $order->id,
