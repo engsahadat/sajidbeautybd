@@ -98,7 +98,7 @@
                         <ul class="mb-0">
                             <li><strong>Facebook:</strong> Create app at <a href="https://developers.facebook.com" target="_blank">developers.facebook.com</a></li>
                             <li>Configure OAuth redirect URL: <code>{{ route('admin.social-media.callback', 'facebook') }}</code></li>
-                            <li>Required permissions: pages_show_list, pages_read_engagement, pages_manage_posts</li>
+                            <li>Required permissions: pages_show_list, pages_read_engagement, pages_manage_posts, pages_manage_metadata, pages_manage_engagement</li>
                             <li>For detailed instructions, see SOCIAL_MEDIA_MODULE.md documentation</li>
                         </ul>
                     </div>

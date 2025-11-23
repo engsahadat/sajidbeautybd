@@ -240,22 +240,34 @@
       <div class="col-lg-4">
         <div class="card">
           <div class="card-body">
-            <h5 class="mb-3">Summary</h5>
+            <h5 class="mb-3">Order Summary</h5>
             <div class="d-flex justify-content-between">
-              <span>Subtotal</span><strong>{{ number_format($order->subtotal, 2) }}</strong>
+              <span>Subtotal</span><strong>৳{{ number_format($order->subtotal, 2) }}</strong>
             </div>
+            @if($order->discount_amount > 0)
+            <div class="d-flex justify-content-between mt-1 text-success">
+              <span>Discount</span><strong>-৳{{ number_format($order->discount_amount, 2) }}</strong>
+            </div>
+            @endif
+            @if($order->shipping_amount > 0)
             <div class="d-flex justify-content-between mt-1">
-              <span>Tax</span><strong>{{ number_format($order->tax_amount, 2) }}</strong>
+              <span>Delivery Charge</span><strong>৳{{ number_format($order->shipping_amount, 2) }}</strong>
             </div>
+            @endif
+            @if($order->tax_amount > 0)
             <div class="d-flex justify-content-between mt-1">
-              <span>Shipping</span><strong>{{ number_format($order->shipping_amount, 2) }}</strong>
+              <span>Tax</span><strong>৳{{ number_format($order->tax_amount, 2) }}</strong>
             </div>
-            <div class="d-flex justify-content-between mt-1">
-              <span>Discount</span><strong>-{{ number_format($order->discount_amount, 2) }}</strong>
-            </div>
+            @endif
             <hr>
             <div class="d-flex justify-content-between">
-              <span>Total</span><strong>{{ number_format($order->total_amount, 2) }}</strong>
+              <span><strong>Total Amount</strong></span><strong class="text-primary fs-5">৳{{ number_format($order->total_amount, 2) }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+              <span>Paid Amount</span><strong class="text-success">৳{{ number_format($order->paidAmount(), 2) }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+              <span>Due Amount</span><strong class="text-danger">৳{{ number_format(max(0, $order->total_amount - $order->paidAmount()), 2) }}</strong>
             </div>
           </div>
         </div>
@@ -295,12 +307,54 @@
         </div>
         <div class="card mt-3">
           <div class="card-body">
-            <h5 class="mb-2">Customer</h5>
-            <div>{{ $order->billing_first_name }} {{ $order->billing_last_name }}</div>
-            <div class="text-muted small">{{ $order->billing_address_line_1 }}, {{ $order->billing_city }},
+            <h5 class="mb-3">Payment Information</h5>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="text-muted">Payment Method:</span>
+              <strong>
+                @if($order->payment_method === 'cod')
+                  <span class="badge bg-info">Cash on Delivery</span>
+                @elseif($order->payment_method === 'bkash')
+                  <span class="badge bg-success">bKash</span>
+                @elseif($order->payment_method === 'sslcommerz')
+                  <span class="badge bg-primary">SSLCommerz</span>
+                @else
+                  <span class="badge bg-secondary">{{ ucfirst($order->payment_method ?? 'N/A') }}</span>
+                @endif
+              </strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted">Payment Status:</span>
+              <strong>
+                @if($order->payment_method === 'cod' && $order->payment_status === 'pending')
+                  <span class="badge bg-warning text-dark">Pending (COD)</span>
+                @elseif($order->payment_method === 'cod' && $order->payment_status === 'paid')
+                  <span class="badge bg-success">Paid (COD)</span>
+                @else
+                  <span class="badge bg-{{ $order->payment_status === 'paid' ? 'success' : ($order->payment_status === 'pending' ? 'warning text-dark' : 'danger') }}">
+                    {{ ucwords(str_replace('_', ' ', $order->payment_status)) }}
+                  </span>
+                @endif
+              </strong>
+            </div>
+            @if($order->delivery_location)
+            <div class="d-flex justify-content-between mt-2">
+              <span class="text-muted">Delivery Location:</span>
+              <strong>{{ $order->delivery_location === 'inside_dhaka' ? 'Inside Dhaka' : 'Outside Dhaka' }}</strong>
+            </div>
+            @endif
+          </div>
+        </div>
+        <div class="card mt-3">
+          <div class="card-body">
+            <h5 class="mb-2">Customer Details</h5>
+            <div><strong>{{ $order->billing_first_name }} {{ $order->billing_last_name }}</strong></div>
+            <div class="text-muted small mt-1">{{ $order->billing_address_line_1 }}, {{ $order->billing_city }},
               {{ $order->billing_postal_code }}, {{ $order->billing_country }}</div>
             @if($order->billing_phone)
-              <div class="text-muted small">Phone: {{ $order->billing_phone }}</div>
+              <div class="text-muted small mt-1"><i class="fa fa-phone"></i> {{ $order->billing_phone }}</div>
+            @endif
+            @if($order->user && $order->user->email)
+              <div class="text-muted small mt-1"><i class="fa fa-envelope"></i> {{ $order->user->email }}</div>
             @endif
           </div>
         </div>

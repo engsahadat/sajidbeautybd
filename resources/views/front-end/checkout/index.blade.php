@@ -95,7 +95,27 @@
           </div>
 
           <div class="col-12 mt-3">
-            <h5>Shipping Address</h5>
+            <h5>Delivery Information</h5>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Delivery Location</label>
+            <select name="delivery_location" id="delivery-location" class="form-select" required>
+              <option value="">Select Location</option>
+              <option value="inside_dhaka" data-charge="60">Inside Dhaka (৳60)</option>
+              <option value="outside_dhaka" data-charge="120">Outside Dhaka (৳120)</option>
+            </select>
+          </div>
+
+          <div class="col-12 mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">Shipping Address</h5>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="same-as-billing">
+                <label class="form-check-label" for="same-as-billing">
+                  Same as billing address
+                </label>
+              </div>
+            </div>
           </div>
           <div class="col-md-6">
             <label class="form-label">First Name</label>
@@ -177,6 +197,10 @@
               <span>Discount</span>
               <strong id="co-discount">-{{ number_format($coDiscount, 2) }}</strong>
             </div>
+            <div class="d-flex justify-content-between mt-2" id="co-delivery-row">
+              <span>Delivery Charge</span>
+              <strong id="co-delivery">0.00</strong>
+            </div>
             <div class="mt-3">
               @if($cart && $cart->coupon)
                 <div class="d-flex justify-content-between align-items-center" id="co-applied-coupon">
@@ -206,6 +230,77 @@
 @push('script')
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // Delivery charge handling
+      let deliveryCharge = 0;
+      const deliveryLocation = document.getElementById('delivery-location');
+      const coDelivery = document.getElementById('co-delivery');
+      const coTotal = document.getElementById('co-total');
+      
+      function updateTotal() {
+        const subtotal = parseFloat(document.getElementById('co-subtotal').textContent.replace(/,/g, '')) || 0;
+        const discount = parseFloat(document.getElementById('co-discount').textContent.replace(/,/g, '').replace('-', '')) || 0;
+        const total = subtotal - discount + deliveryCharge;
+        coTotal.textContent = total.toFixed(2);
+      }
+      
+      if (deliveryLocation) {
+        deliveryLocation.addEventListener('change', function() {
+          const selectedOption = this.options[this.selectedIndex];
+          deliveryCharge = parseFloat(selectedOption.getAttribute('data-charge')) || 0;
+          coDelivery.textContent = deliveryCharge.toFixed(2);
+          updateTotal();
+        });
+      }
+
+      // Same as billing address checkbox
+      const sameAsBillingCheckbox = document.getElementById('same-as-billing');
+      if (sameAsBillingCheckbox) {
+        sameAsBillingCheckbox.addEventListener('change', function() {
+          const isChecked = this.checked;
+          
+          if (isChecked) {
+            // Copy billing to shipping
+            document.querySelector('[name="shipping_first_name"]').value = document.querySelector('[name="billing_first_name"]').value;
+            document.querySelector('[name="shipping_last_name"]').value = document.querySelector('[name="billing_last_name"]').value;
+            document.querySelector('[name="shipping_address_line_1"]').value = document.querySelector('[name="billing_address_line_1"]').value;
+            document.querySelector('[name="shipping_city"]').value = document.querySelector('[name="billing_city"]').value;
+            document.querySelector('[name="shipping_postal_code"]').value = document.querySelector('[name="billing_postal_code"]').value;
+            document.querySelector('[name="shipping_country"]').value = document.querySelector('[name="billing_country"]').value;
+            document.querySelector('[name="shipping_phone"]').value = document.querySelector('[name="billing_phone"]').value;
+            
+            // Disable shipping fields
+            document.querySelectorAll('[name^="shipping_"]').forEach(field => {
+              field.setAttribute('readonly', 'readonly');
+              field.style.backgroundColor = '#e9ecef';
+            });
+          } else {
+            // Enable shipping fields
+            document.querySelectorAll('[name^="shipping_"]').forEach(field => {
+              field.removeAttribute('readonly');
+              field.style.backgroundColor = '';
+            });
+          }
+        });
+        
+        // Live sync billing to shipping when checkbox is checked
+        const billingFields = ['billing_first_name', 'billing_last_name', 'billing_address_line_1', 
+                               'billing_city', 'billing_postal_code', 'billing_country', 'billing_phone'];
+        billingFields.forEach(fieldName => {
+          const billingField = document.querySelector(`[name="${fieldName}"]`);
+          if (billingField) {
+            billingField.addEventListener('input', function() {
+              if (sameAsBillingCheckbox.checked) {
+                const shippingFieldName = fieldName.replace('billing_', 'shipping_');
+                const shippingField = document.querySelector(`[name="${shippingFieldName}"]`);
+                if (shippingField) {
+                  shippingField.value = this.value;
+                }
+              }
+            });
+          }
+        });
+      }
+
       const coForm = document.getElementById('co-coupon-form');
       const coApply = document.getElementById('co-apply-coupon-btn');
       const coCode = document.getElementById('co-coupon-code-input');
@@ -238,8 +333,8 @@
               if (data.success) {
                 document.getElementById('co-subtotal').textContent = Number(data.subtotal).toFixed(2);
                 document.getElementById('co-discount').textContent = '-' + Number(data.discount).toFixed(2);
-                document.getElementById('co-total').textContent = Number(data.total).toFixed(2);
                 document.getElementById('co-discount-row').style.display = 'flex';
+                updateTotal();
                 const appliedHtml = `\n<div class="d-flex justify-content-between align-items-center" id="co-applied-coupon">\n  <div><span class="text-success">Coupon Applied:</span> <strong id="co-applied-coupon-code">${data.coupon.code}</strong></div>\n  <button type="button" class="btn btn-sm btn-outline-danger" id="co-remove-coupon-btn" data-url="${'{{ route('cart.removeCoupon') }}'}">Remove</button>\n</div>`;
                 coForm.outerHTML = appliedHtml;
                 coAlert(data.message, 'success');
@@ -268,8 +363,8 @@
               if (data.success) {
                 document.getElementById('co-subtotal').textContent = Number(data.subtotal).toFixed(2);
                 document.getElementById('co-discount').textContent = '-0.00';
-                document.getElementById('co-total').textContent = Number(data.total).toFixed(2);
                 document.getElementById('co-discount-row').style.display = 'none';
+                updateTotal();
                 const formHtml = `\n<form id=\"co-coupon-form\" action=\"{{ route('cart.applyCoupon') }}\" method=\"POST\" class=\"d-flex gap-2\">\n  @csrf\n  <input type=\"text\" name=\"code\" id=\"co-coupon-code-input\" class=\"form-control\" placeholder=\"Coupon code\">\n  <button type=\"button\" class=\"btn btn-outline-primary\" id=\"co-apply-coupon-btn\">Apply</button>\n</form>`;
                 const applied = document.getElementById('co-applied-coupon');
                 if (applied) applied.outerHTML = formHtml;

@@ -48,6 +48,8 @@ class CheckoutController extends Controller
             'billing_postal_code' => 'required|string|max:10',
             'billing_country' => 'required|string|size:2',
             'billing_phone' => 'nullable|string|max:20',
+            // Delivery
+            'delivery_location' => 'required|in:inside_dhaka,outside_dhaka',
             // Shipping (for simplicity mirror billing; in UI let users copy billing to shipping)
             'shipping_first_name' => 'required|string|max:50',
             'shipping_last_name' => 'required|string|max:50',
@@ -63,9 +65,16 @@ class CheckoutController extends Controller
     $order = DB::transaction(function() use ($cart, $data) {
         $orderNumber = 'ORD-'.date('ymd').'-'.Str::upper(Str::random(6));
         $subtotal = $cart->subtotal();
-        $tax = 0.00; $shipping = 0.00;
+        $tax = 0.00;
+        
+        // Calculate delivery charge based on location
+        $shipping = 0.00;
+        if (isset($data['delivery_location'])) {
+            $shipping = $data['delivery_location'] === 'inside_dhaka' ? 60.00 : 120.00;
+        }
+        
         $discount = $cart->discount();
-        $total = $cart->total();
+        $total = $subtotal - $discount + $shipping + $tax;
 
             $order = Order::create(array_merge($data, [
                 'order_number' => $orderNumber,
@@ -108,7 +117,7 @@ class CheckoutController extends Controller
         // Branch by payment method
         $method = $data['payment_method'] ?? 'cod';
         if ($method === 'cod') {
-            // Record COD as completed and clear cart
+            // For COD, keep payment status as pending - will be marked as paid on delivery
             Payment::create([
                 'order_id' => $order->id,
                 'payment_method' => 'COD',
@@ -116,10 +125,10 @@ class CheckoutController extends Controller
                 'transaction_id' => null,
                 'amount' => $order->total_amount,
                 'currency' => $order->currency ?? 'BDT',
-                'status' => 'completed',
-                'processed_at' => now(),
+                'status' => 'pending',
+                'processed_at' => null,
             ]);
-            $order->refreshPaymentStatus();
+            // Don't refresh payment status for COD - keep it as pending
             if ($cart->coupon) {
                  try { 
                     $cart->coupon->increment('used_count'); 

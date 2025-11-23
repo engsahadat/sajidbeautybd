@@ -129,7 +129,7 @@
 								</table>
 							</div>
 							<div class="alert alert-info w-100">
-								<i class="ri-information-line me-2"></i><strong>Note:</strong> Delivery times may vary during public holidays, festivals (Eid, Puja), or unforeseen circumstances like weather conditions.
+								<i class="ri-information-line me-2"></i><strong>Note:</strong> <span style="margin-top: 23px">Delivery times may vary during public holidays, festivals (Eid, Puja), or unforeseen circumstances like weather conditions.</span>
 							</div>
 						</div>
 
@@ -164,8 +164,8 @@
 										<div class="card-body pb-3">
 											<i class="ri-gift-2-line display-4"></i>
 											<h5 class="mt-3 text-white">Free Delivery</h5>
-											<h3 class="text-white">৳ 1500+</h3>
-											<p class="small mb-0 text-white">Orders Above ৳1500</p>
+											<h3 class="text-white">৳ 5000+</h3>
+											<p class="small mb-0 text-white">Orders Above ৳5000</p>
 										</div>
 									</div>
 								</div>
@@ -256,7 +256,7 @@
 								<i class="ri-radar-fill text-primary me-2"></i>Order Tracking
 							</h3>
 							<div class="alert alert-primary w-100 d-flex flex-column justify-content-center">
-								<h6 class="alert-heading"><i class="ri-smartphone-line me-2"></i>Track Your Order</h6>
+								<h4 class="alert-heading"><i class="ri-smartphone-line me-2"></i>Track Your Order</h4>
 								<p class="mb-2">Stay updated with real-time order tracking:</p>
 								<ul class="mb-0">
 									<li>Check order status anytime in your account dashboard</li>

@@ -2,11 +2,27 @@
 @section('admin-title','Orders')
 @section('admin-content')
 <div class="container-fluid">
-  <div class="page-header"><div class="row"><div class="col-lg-6"><div class="page-header-left"><h3>Orders</h3></div></div>
-    <div class="col-lg-6"><ol class="breadcrumb pull-right"><li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"><i data-feather="home"></i></a></li><li class="breadcrumb-item">Orders</li></ol></div></div></div>
+  <div class="page-header">
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="page-header-left">
+          <h3>Orders</h3>
+        </div>
+      </div>
+    <div class="col-lg-6">
+      <ol class="breadcrumb pull-right">
+        <li class="breadcrumb-item">
+          <a href="{{ route('admin.dashboard') }}"><i data-feather="home"></i></a>
+        </li>
+        <li class="breadcrumb-item">Orders</li>
+      </ol>
+    </div>
+  </div>
+</div>
 </div>
 <div class="container-fluid">
-  <div class="card"><div class="card-body">
+  <div class="card">
+    <div class="card-body">
     <form method="GET" action="{{ route('orders.index') }}" class="d-flex flex-wrap gap-2 mb-3">
       <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Order no. or name" style="max-width:220px;">
       <select name="status" class="form-select" style="max-width:180px;">
@@ -50,10 +66,10 @@
               <td><span class="badge {{ $o->payment_status==='paid'?'bg-success':'bg-secondary' }}">{{ ucwords(str_replace('_',' ',$o->payment_status)) }}</span></td>
               <td>{{ $o->created_at?->format('Y-m-d H:i') }}</td>
               <td>
-                <a href="{{ route('orders.show',$o->id) }}" class="btn btn-sm btn-info" title="View Details">
+                <a href="{{ route('orders.show',$o->id) }}" title="View Details">
                   <i class="fa fa-eye"></i>
                 </a>
-                <a href="{{ route('orders.invoice',$o->id) }}" class="btn btn-sm btn-primary" title="View Invoice" target="_blank">
+                <a href="{{ route('orders.invoice',$o->id) }}" title="View Invoice" target="_blank">
                   <i class="fa fa-file-text"></i>
                 </a>
               </td>

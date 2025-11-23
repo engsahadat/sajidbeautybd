@@ -5,7 +5,7 @@
     <div class="text-center mb-4">
       <h2 class="mb-2">Thank you! 🎉</h2>
       <p class="mb-1">Your order <strong>{{ $order->order_number }}</strong> has been placed.</p>
-      <p class="mb-0">Order total: <strong>{{ number_format($order->total_amount,2) }}</strong></p>
+      <p class="mb-0">Order total: <strong>৳{{ number_format($order->total_amount,2) }}</strong></p>
     </div>
 
     <!-- Status progress -->
@@ -77,10 +77,16 @@
                 </tbody>
                 <tfoot>
                   <tr><th colspan="3" class="text-end">Subtotal</th><th class="text-end">{{ number_format($order->subtotal,2) }}</th></tr>
-                  <tr><th colspan="3" class="text-end">Shipping</th><th class="text-end">{{ number_format($order->shipping_amount,2) }}</th></tr>
+                  @if($order->discount_amount > 0)
+                  <tr class="text-success"><th colspan="3" class="text-end">Discount</th><th class="text-end">-{{ number_format($order->discount_amount,2) }}</th></tr>
+                  @endif
+                  @if($order->shipping_amount > 0)
+                  <tr><th colspan="3" class="text-end">Delivery Charge</th><th class="text-end">{{ number_format($order->shipping_amount,2) }}</th></tr>
+                  @endif
+                  @if($order->tax_amount > 0)
                   <tr><th colspan="3" class="text-end">Tax</th><th class="text-end">{{ number_format($order->tax_amount,2) }}</th></tr>
-                  <tr><th colspan="3" class="text-end">Discount</th><th class="text-end">-{{ number_format($order->discount_amount,2) }}</th></tr>
-                  <tr><th colspan="3" class="text-end">Total</th><th class="text-end">{{ number_format($order->total_amount,2) }}</th></tr>
+                  @endif
+                  <tr class="table-active"><th colspan="3" class="text-end">Total</th><th class="text-end">৳{{ number_format($order->total_amount,2) }}</th></tr>
                 </tfoot>
               </table>
             </div>

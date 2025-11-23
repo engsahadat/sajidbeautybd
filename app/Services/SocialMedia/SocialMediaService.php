@@ -2,10 +2,11 @@
 
 namespace App\Services\SocialMedia;
 
-use App\Models\SocialMediaSetting;
+use App\Models\Product;
 use App\Models\SocialMediaPage;
 use App\Models\SocialMediaPost;
-use App\Models\Product;
+use App\Models\SocialMediaSetting;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -17,19 +18,14 @@ class SocialMediaService
     public function getAuthorizationUrl($platform, $redirectUri)
     {
         $setting = SocialMediaSetting::where('platform', $platform)->first();
-
         if (!$setting) {
             throw new \Exception("Platform {$platform} is not configured");
         }
-
         switch ($platform) {
             case SocialMediaSetting::PLATFORM_FACEBOOK:
                 return $this->getFacebookAuthUrl($setting, $redirectUri);
-            
             case SocialMediaSetting::PLATFORM_TWITTER:
                 return $this->getTwitterAuthUrl($setting, $redirectUri);
-            
-            // Add other platforms as needed
             default:
                 throw new \Exception("Platform {$platform} is not supported yet");
         }
@@ -40,7 +36,7 @@ class SocialMediaService
      */
     protected function getFacebookAuthUrl($setting, $redirectUri)
     {
-        $permissions = 'pages_show_list,pages_read_engagement,pages_manage_posts,public_profile,email';
+        $permissions = 'pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_metadata,pages_manage_engagement,public_profile,email';
         
         return 'https://www.facebook.com/v18.0/dialog/oauth?' . http_build_query([
             'client_id' => $setting->app_id,
@@ -56,16 +52,12 @@ class SocialMediaService
     public function handleCallback($platform, $code, $redirectUri)
     {
         $setting = SocialMediaSetting::where('platform', $platform)->first();
-
         if (!$setting) {
             throw new \Exception("Platform {$platform} is not configured");
         }
-
         switch ($platform) {
             case SocialMediaSetting::PLATFORM_FACEBOOK:
                 return $this->handleFacebookCallback($setting, $code, $redirectUri);
-            
-            // Add other platforms
             default:
                 throw new \Exception("Platform {$platform} is not supported yet");
         }
@@ -76,26 +68,20 @@ class SocialMediaService
      */
     protected function handleFacebookCallback($setting, $code, $redirectUri)
     {
-        // Exchange code for access token
         $response = Http::get('https://graph.facebook.com/v18.0/oauth/access_token', [
             'client_id' => $setting->app_id,
             'client_secret' => $setting->app_secret,
             'redirect_uri' => $redirectUri,
             'code' => $code
         ]);
-
         if ($response->failed()) {
             throw new \Exception('Failed to get access token from Facebook');
         }
-
         $data = $response->json();
-        
-        // Update setting with access token
         $setting->update([
             'access_token' => $data['access_token'],
             'token_expires_at' => now()->addSeconds($data['expires_in'] ?? 5184000) // 60 days default
         ]);
-
         return $setting;
     }
 
@@ -145,22 +131,18 @@ class SocialMediaService
      */
     public function shareProduct(Product $product, SocialMediaPage $page, $message = null, $userId = null)
     {
-        // Create post record
         $post = SocialMediaPost::create([
             'social_media_page_id' => $page->id,
             'product_id' => $product->id,
-            'user_id' => $userId ?? auth()->id(),
+            'user_id' => $userId ?? Auth::id(),
             'platform' => $page->platform,
             'message' => $message ?? $this->generateDefaultMessage($product),
             'status' => SocialMediaPost::STATUS_PENDING
         ]);
-
         try {
             switch ($page->platform) {
                 case SocialMediaSetting::PLATFORM_FACEBOOK:
                     return $this->shareToFacebook($product, $page, $post);
-                
-                // Add other platforms
                 default:
                     throw new \Exception("Sharing to {$page->platform} is not supported yet");
             }
@@ -185,7 +167,9 @@ class SocialMediaService
         $postData = [
             'access_token' => $page->page_access_token,
             'message' => $post->message,
-            'link' => $productUrl
+            'link' => $productUrl,
+            'published' => true,
+            'privacy' => json_encode(['value' => 'EVERYONE'])  // Set explicit public visibility
         ];
 
         // If we have an image, use photo endpoint
@@ -193,10 +177,11 @@ class SocialMediaService
             $response = Http::post("https://graph.facebook.com/v18.0/{$page->page_id}/photos", [
                 'access_token' => $page->page_access_token,
                 'url' => $imageUrl,
-                'caption' => $post->message . "\n\n" . $productUrl
+                'caption' => $post->message . "\n\n" . $productUrl,
+                'published' => true,
+                'privacy' => json_encode(['value' => 'EVERYONE'])  // Set explicit public visibility
             ]);
         } else {
-            // Otherwise use feed endpoint
             $response = Http::post("https://graph.facebook.com/v18.0/{$page->page_id}/feed", $postData);
         }
 
@@ -205,8 +190,6 @@ class SocialMediaService
         }
 
         $responseData = $response->json();
-
-        // Update post with success info
         $post->update([
             'status' => SocialMediaPost::STATUS_PUBLISHED,
             'post_id' => $responseData['id'] ?? $responseData['post_id'] ?? null,
@@ -214,7 +197,6 @@ class SocialMediaService
             'published_at' => now(),
             'media_urls' => $imageUrl ? [$imageUrl] : null
         ]);
-
         return $post;
     }
 
@@ -224,7 +206,6 @@ class SocialMediaService
     protected function generateDefaultMessage(Product $product)
     {
         $message = "🛍️ {$product->name}\n\n";
-        
         if ($product->description) {
             $description = strip_tags($product->description);
             $message .= substr($description, 0, 200);
@@ -233,15 +214,11 @@ class SocialMediaService
             }
             $message .= "\n\n";
         }
-
-        $message .= "💰 Price: ৳" . number_format($product->price, 2) . "\n";
-        
+        $message .= "💰 Price: ৳" . number_format((float)($product->price ?? 0), 2) . "\n";
         if ($product->stock_quantity > 0) {
             $message .= "✅ In Stock\n";
         }
-
         $message .= "\n🔗 Shop now!";
-
         return $message;
     }
 
@@ -304,10 +281,7 @@ class SocialMediaService
             'reactions' => $data['reactions']['summary']['total_count'] ?? 0,
             'fetched_at' => now()->toDateTimeString()
         ];
-
-        // Save analytics to post
         $post->update(['analytics' => $analytics]);
-
         return $analytics;
     }
 }

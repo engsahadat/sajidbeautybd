@@ -45,7 +45,7 @@
     @endif
     
     <!-- collection banner -->
-    <section class="pb-0 banner-section">
+    {{-- <section class="pb-0 banner-section">
         <div class="container">
             <div class="row partition2">
                 @if(isset($bannerImages) && $bannerImages->count() > 0)
@@ -74,7 +74,7 @@
                 @endif
             </div>
         </div>
-    </section>
+    </section> --}}
 
     <!-- collection banner end -->
     <!-- Paragraph-->
@@ -94,19 +94,79 @@
     <!-- Product slider -->
     <section class="section-b-space pt-0 ratio_asos">
         <div class="container">
-            @if(isset($categories) && $categories->count())
-                <div class="mb-3 d-flex flex-wrap gap-2 justify-content-center">
-                    @php
-                        $activeCategory = request('category_id');
-                    @endphp
-                    <a href="{{ route('home') }}" class="badge rounded-pill {{ $activeCategory ? 'bg-light text-dark' : 'bg-dark' }} px-3 py-2">All</a>
-                    @foreach($categories as $cat)
-                        <a href="{{ route('home', ['category_id' => $cat->id]) }}" class="badge rounded-pill px-3 py-2 {{ (string)$activeCategory === (string)$cat->id ? 'bg-dark' : 'bg-light text-dark' }}">
-                            {{ $cat->name }}
-                        </a>
-                    @endforeach
+            <!-- Filter and Sort Bar -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('home') }}" class="row g-3 align-items-end">
+                                <!-- Search -->
+                                <div class="col-md-4">
+                                    <label for="search" class="form-label small text-muted">Search Products</label>
+                                    <input type="text" class="form-control" id="search" name="search" 
+                                           placeholder="Search by name..." value="{{ request('search') }}">
+                                </div>
+
+                                <!-- Category Filter -->
+                                <div class="col-md-3">
+                                    <label for="category" class="form-label small text-muted">Category</label>
+                                    <select class="form-select" id="category" name="category_id">
+                                        <option value="">All Categories</option>
+                                        @if(isset($categories))
+                                            @foreach($categories as $cat)
+                                                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                                                    {{ $cat->name }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+
+                                <!-- Brand Filter -->
+                                <div class="col-md-3">
+                                    <label for="brand" class="form-label small text-muted">Brand</label>
+                                    <select class="form-select" id="brand" name="brand_id">
+                                        <option value="">All Brands</option>
+                                        @php
+                                            $brands = \App\Models\Brand::where('is_active', 1)
+                                                ->where('status', 'active')
+                                                ->orderBy('name', 'asc')
+                                                ->get();
+                                        @endphp
+                                        @foreach($brands as $brand)
+                                            <option value="{{ $brand->id }}" {{ request('brand_id') == $brand->id ? 'selected' : '' }}>
+                                                {{ $brand->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <!-- Sort -->
+                                <div class="col-md-2">
+                                    <label for="sort" class="form-label small text-muted">Sort By</label>
+                                    <select class="form-select" id="sort" name="sort">
+                                        <option value="latest" {{ request('sort') == 'latest' ? 'selected' : '' }}>Latest</option>
+                                        <option value="price_low" {{ request('sort') == 'price_low' ? 'selected' : '' }}>Price: Low to High</option>
+                                        <option value="price_high" {{ request('sort') == 'price_high' ? 'selected' : '' }}>Price: High to Low</option>
+                                        <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Name: A to Z</option>
+                                        <option value="featured" {{ request('sort') == 'featured' ? 'selected' : '' }}>Featured</option>
+                                    </select>
+                                </div>
+
+                                <!-- Buttons -->
+                                <div class="col-12 d-flex gap-2">
+                                    <button type="submit" class="btn btn-dark">
+                                        <i class="ri-filter-line me-1"></i> Apply Filters
+                                    </button>
+                                    <a href="{{ route('home') }}" class="btn btn-outline-secondary">
+                                        <i class="ri-refresh-line me-1"></i> Reset
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-            @endif
+            </div>
 
             <div class="g-3 g-md-4 row row-cols-2 row-cols-md-3 row-cols-xl-4">
                 @foreach($products as $product)

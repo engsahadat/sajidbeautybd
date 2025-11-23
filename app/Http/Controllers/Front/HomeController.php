@@ -18,31 +18,75 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
-        $categories = Category::where('is_active', 1)->where('status', 'active')->orderBy('sort_order', 'asc')->take(8)->get();
+        $categories = Category::where('is_active', 1)->where('status', 'active')->orderBy('sort_order', 'asc')->get();
         $brands = Brand::where('is_active', 1)->where('status', 'active')->orderBy('sort_order', 'asc')->get();
         $homePages = HomePage::all();
         $sliderImages = $homePages->where('type', 'slider');
         $bannerImages = $homePages->where('type', 'banner');
         $middleImages = $homePages->where('type', 'middle');
         $serviceImages = $homePages->where('type', 'service');
-        $categoryId = $request->query('category_id');
+        
         $productsQuery = Product::with(['brand', 'category'])
             ->withCount('reviews')
             ->withAvg('reviews', 'rating')
-            ->where('is_active', 1)
-            ->orderBy('sort_order', 'asc')
-            ->orderBy('created_at', 'desc');
-        if ($categoryId) {
-            $productsQuery->where('category_id', (int)$categoryId);
-        } else {
+            ->where('is_active', 1);
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $productsQuery->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('sku', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Category filter
+        if ($request->filled('category_id')) {
+            $productsQuery->where('category_id', $request->category_id);
+        }
+
+        // Brand filter
+        if ($request->filled('brand_id')) {
+            $productsQuery->where('brand_id', $request->brand_id);
+        }
+
+        // Apply featured filter only if no other filters are active
+        if (!$request->filled('search') && !$request->filled('category_id') && !$request->filled('brand_id') && !$request->filled('sort')) {
             $productsQuery->where('is_featured', 1);
         }
-        $products = $productsQuery->paginate(20)->withQueryString();
+
+        // Sort
+        $sort = $request->get('sort', 'latest');
+        switch ($sort) {
+            case 'price_low':
+                $productsQuery->orderByRaw('COALESCE(sale_price, price) ASC');
+                break;
+            case 'price_high':
+                $productsQuery->orderByRaw('COALESCE(sale_price, price) DESC');
+                break;
+            case 'name':
+                $productsQuery->orderBy('name', 'asc');
+                break;
+            case 'featured':
+                $productsQuery->orderBy('is_featured', 'desc')
+                      ->orderBy('created_at', 'desc');
+                break;
+            case 'latest':
+            default:
+                $productsQuery->orderBy('sort_order', 'asc')
+                      ->orderBy('created_at', 'desc');
+                break;
+        }
+
+        $products = $productsQuery->paginate(50)->withQueryString();
+        
         $blogs = Blog::with('author')
             ->active()
             ->published()
             ->orderBy('published_at', 'desc')
             ->get();
+            
         return view('front-end.index', compact('categories', 'brands', 'homePages', 'sliderImages', 'bannerImages', 'middleImages', 'serviceImages', 'products', 'blogs'));
     }
     public function productDetails($id){
@@ -125,7 +169,7 @@ class HomeController extends Controller
                 break;
         }
 
-        $products = $query->paginate(20)->withQueryString();
+        $products = $query->paginate(50)->withQueryString();
         
         return view('front-end.home.all-products', compact('products'));
     }
