@@ -320,6 +320,54 @@
             color: #1a1a1a;
             font-weight: 700;
         }
+
+        /* Mobile: Move buttons under product images */
+        @media (max-width: 991px) {
+            /* Hide the buttons from right sidebar on mobile */
+            .col-lg-4:last-child .product-buttons {
+                display: none !important;
+            }
+            
+            /* Show mobile buttons under product images */
+            .mobile-action-buttons {
+                display: block !important;
+                width: 100%;
+                margin-top: 20px;
+            }
+            
+            .mobile-action-buttons .product-buttons {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .mobile-action-buttons .qty-section {
+                margin-bottom: 15px;
+            }
+            
+            .mobile-action-buttons .qty-box {
+                max-width: 180px;
+                margin: 0 auto;
+            }
+            
+            .mobile-action-buttons .d-flex {
+                flex-direction: column;
+                gap: 10px !important;
+                width: 100%;
+            }
+            
+            .mobile-action-buttons .btn {
+                width: 100% !important;
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+        }
+        
+        /* Desktop: Hide mobile buttons */
+        @media (min-width: 992px) {
+            .mobile-action-buttons {
+                display: none !important;
+            }
+        }
     </style>
     <!-- breadcrumb start -->
     <div class="breadcrumb-section">
@@ -368,6 +416,48 @@
                                             <div>
                                                 <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="img-fluid blur-up lazyload">
                                             </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {{-- Mobile Action Buttons - Show under product images on mobile --}}
+                            <div class="mobile-action-buttons">
+                                <div class="product-buttons">
+                                    <div class="qty-section">
+                                        <div class="qty-box">
+                                            <div class="input-group">
+                                                <span class="input-group-prepend">
+                                                    <button type="button" class="btn quantity-left-minus mobile-qty-minus"
+                                                        data-type="minus" data-field="">
+                                                        <i class="ri-arrow-left-s-line"></i>
+                                                    </button>
+                                                </span>
+                                                <input type="text" name="quantity" class="form-control input-number mobile-quantity"
+                                                    value="1">
+                                                <span class="input-group-prepend">
+                                                    <button type="button" class="btn quantity-right-plus mobile-qty-plus"
+                                                        data-type="plus" data-field="">
+                                                        <i class="ri-arrow-right-s-line"></i>
+                                                    </button>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="product-buttons">
+                                    <div class="d-flex align-items-center gap-3">
+                                        @if($product->stock_status === 'in_stock' && (!$product->manage_stock || $product->stock_quantity > 0))
+                                            <button class="btn btn-animation btn-solid hover-solid scroll-button"
+                                                type="button" onclick="addToCart({{ $product->id }}); event.stopPropagation(); return false;">
+                                                Add To Cart
+                                            </button>
+                                            <button class="btn btn-solid buy-button" onclick="buyNow({{ $product->id }}); event.stopPropagation(); return false;">Buy Now</button>
+                                        @else
+                                            <button class="btn btn-animation btn-solid hover-solid scroll-button disabled"
+                                                type="button"> Out Of Stock
+                                            </button>
+                                            <button class="btn btn-solid buy-button disabled">Buy Now</button>
                                         @endif
                                     </div>
                                 </div>
@@ -955,7 +1045,10 @@
             console.log('Add to cart clicked for product:', productId);
             
             requireAuth(() => {
-                const quantityInput = document.querySelector('input[name="quantity"]');
+                // Get quantity from either desktop or mobile input
+                const desktopInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
+                const mobileInput = document.querySelector('.mobile-quantity');
+                const quantityInput = desktopInput || mobileInput;
                 const quantity = quantityInput ? quantityInput.value || 1 : 1;
                 const variantId = window.selectedVariantId || null;
                 
@@ -1095,7 +1188,11 @@
         }
         function buyNow(productId) {
             requireAuth(() => {
-                const quantity = document.querySelector('input[name="quantity"]').value;
+                // Get quantity from either desktop or mobile input
+                const desktopInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
+                const mobileInput = document.querySelector('.mobile-quantity');
+                const quantityInput = desktopInput || mobileInput;
+                const quantity = quantityInput ? quantityInput.value : 1;
                 const variantId = window.selectedVariantId || null;
                 fetch('{{ route('cart.add') }}', {
                     method: 'POST',
@@ -1200,44 +1297,106 @@
             if (firstVariant && firstVariant.hasAttribute('data-variant-id')) {
                 window.selectedVariantId = firstVariant.getAttribute('data-variant-id');
             }
-            const quantityInput = document.querySelector('input[name="quantity"]');
-            const minusBtn = document.querySelector('.quantity-left-minus');
-            const plusBtn = document.querySelector('.quantity-right-plus');
             
-            minusBtn.addEventListener('click', function() {
-                let currentValue = parseInt(quantityInput.value) || 1;
-                if (currentValue > 1) {
-                    quantityInput.value = currentValue - 1;
-                }
-            });
+            // Get all quantity inputs (desktop and mobile)
+            const desktopQuantityInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
+            const mobileQuantityInput = document.querySelector('.mobile-quantity');
+            const desktopMinusBtn = document.querySelector('.col-lg-4:last-child .quantity-left-minus');
+            const desktopPlusBtn = document.querySelector('.col-lg-4:last-child .quantity-right-plus');
+            const mobileMinusBtn = document.querySelector('.mobile-qty-minus');
+            const mobilePlusBtn = document.querySelector('.mobile-qty-plus');
             
-            plusBtn.addEventListener('click', function() {
-                let currentValue = parseInt(quantityInput.value) || 1;
-                const maxStock = {{ $product->manage_stock ? ($product->stock_quantity ?: 999) : 999 }};
-                if (currentValue < maxStock) {
-                    quantityInput.value = currentValue + 1;
-                } else {
-                    showNotification('Maximum available quantity is ' + maxStock, 'info');
-                }
-            });
+            const maxStock = {{ $product->manage_stock ? ($product->stock_quantity ?: 999) : 999 }};
             
-            quantityInput.addEventListener('input', function() {
-                let value = parseInt(this.value) || 1;
-                const maxStock = {{ $product->manage_stock ? ($product->stock_quantity ?: 999) : 999 }};
+            // Function to sync quantity inputs
+            function syncQuantity(value) {
+                if (desktopQuantityInput) desktopQuantityInput.value = value;
+                if (mobileQuantityInput) mobileQuantityInput.value = value;
+            }
+            
+            // Desktop minus button
+            if (desktopMinusBtn) {
+                desktopMinusBtn.addEventListener('click', function() {
+                    let currentValue = parseInt(desktopQuantityInput.value) || 1;
+                    if (currentValue > 1) {
+                        syncQuantity(currentValue - 1);
+                    }
+                });
+            }
+            
+            // Desktop plus button
+            if (desktopPlusBtn) {
+                desktopPlusBtn.addEventListener('click', function() {
+                    let currentValue = parseInt(desktopQuantityInput.value) || 1;
+                    if (currentValue < maxStock) {
+                        syncQuantity(currentValue + 1);
+                    } else {
+                        showNotification('Maximum available quantity is ' + maxStock, 'info');
+                    }
+                });
+            }
+            
+            // Mobile minus button
+            if (mobileMinusBtn) {
+                mobileMinusBtn.addEventListener('click', function() {
+                    let currentValue = parseInt(mobileQuantityInput.value) || 1;
+                    if (currentValue > 1) {
+                        syncQuantity(currentValue - 1);
+                    }
+                });
+            }
+            
+            // Mobile plus button
+            if (mobilePlusBtn) {
+                mobilePlusBtn.addEventListener('click', function() {
+                    let currentValue = parseInt(mobileQuantityInput.value) || 1;
+                    if (currentValue < maxStock) {
+                        syncQuantity(currentValue + 1);
+                    } else {
+                        showNotification('Maximum available quantity is ' + maxStock, 'info');
+                    }
+                });
+            }
+            
+            // Desktop input change
+            if (desktopQuantityInput) {
+                desktopQuantityInput.addEventListener('input', function() {
+                    let value = parseInt(this.value) || 1;
+                    if (value < 1) {
+                        value = 1;
+                    } else if (value > maxStock) {
+                        value = maxStock;
+                        showNotification('Maximum available quantity is ' + maxStock, 'info');
+                    }
+                    syncQuantity(value);
+                });
                 
-                if (value < 1) {
-                    this.value = 1;
-                } else if (value > maxStock) {
-                    this.value = maxStock;
-                    showNotification('Maximum available quantity is ' + maxStock, 'info');
-                }
-            });
+                desktopQuantityInput.addEventListener('keypress', function(e) {
+                    if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                });
+            }
             
-            quantityInput.addEventListener('keypress', function(e) {
-                if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
-                    e.preventDefault();
-                }
-            });
+            // Mobile input change
+            if (mobileQuantityInput) {
+                mobileQuantityInput.addEventListener('input', function() {
+                    let value = parseInt(this.value) || 1;
+                    if (value < 1) {
+                        value = 1;
+                    } else if (value > maxStock) {
+                        value = maxStock;
+                        showNotification('Maximum available quantity is ' + maxStock, 'info');
+                    }
+                    syncQuantity(value);
+                });
+                
+                mobileQuantityInput.addEventListener('keypress', function(e) {
+                    if (!/\d/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter'].includes(e.key)) {
+                        e.preventDefault();
+                    }
+                });
+            }
             if (isAuthenticated) {
                 loadUserPreferences();
             }
