@@ -21,7 +21,7 @@
                     <div class="menu-left">
                         <div class="brand-logo">
                             <a href="{{ url('/') }}">
-                                <img src="{{ asset('images/logo.svg') }}" class="img-fluid blur-up lazyload" alt="">
+                                <img src="{{ asset('images/flogo.png') }}" class="img-fluid blur-up lazyload" alt="">
                             </a>
                         </div>
                     </div>

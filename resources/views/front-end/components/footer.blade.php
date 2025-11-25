@@ -5,7 +5,7 @@
                 <div class="col-xl-3 col-lg-5 col-md-6 sub-title">
                     <div>
                         <div class="footer-logo">
-                            <a href="{{ url('/') }}"><img style="height:80px; width: 90px;" alt="logo" class="img-fluid" src="{{ asset('images/logo-white.svg') }}"></a>
+                            <a href="{{ url('/') }}"><img style="height:80px; width: 140px;" alt="logo" class="img-fluid" src="{{ asset('images/flogo.png') }}"></a>
                         </div>
                         <p>{{ \App\Models\Setting::get('site_tagline', 'Sajid Beauty BD is a beauty and cosmetics Shop') }}</p>
                         <ul class="contact-list">

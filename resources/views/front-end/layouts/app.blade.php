@@ -9,8 +9,8 @@
     <meta name="format-detection" content="telephone=no">
 
     <link rel="canonical" href="http://www.sajidbeautybd.com/">
-    <link rel="icon" href="{{ asset('images/logo.svg') }}">
-    <link rel="shortcut icon" href="{{ asset('images/logo.svg') }}" type="image/x-icon">
+    <link rel="icon" href="{{ asset('favicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" type="image/x-icon">
 
     <!-- Open Graph -->
     <meta property="og:title" content="Sajid Beauty BD">
