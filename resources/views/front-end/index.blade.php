@@ -4,7 +4,7 @@
 @extends('front-end.layouts.app')
 @section('title', 'Home')
 @section('content')
-<!-- Home slider -->
+    <!-- Home slider -->
     <section class="p-0">
         <div class="slide-1 home-slider">
             @if(isset($sliderImages) && $sliderImages->count() > 0)
@@ -32,11 +32,9 @@
             <div class="row">
                 <div class="col-12">
                     <div class="text-center">
-                        <h3>
-                            <i class="ri-truck-line me-1"></i>
+                        <h3><i class="ri-truck-line me-1"></i>
                         Delivery within <strong>{{ (int)$deliveryDays }}</strong> day{{ (int)$deliveryDays > 1 ? 's' : '' }} across Bangladesh
                         </h3>
-
                     </div>
                 </div>
             </div>
@@ -155,7 +153,7 @@
 
                                 <!-- Buttons -->
                                 <div class="col-12 d-flex gap-2">
-                                    <button type="submit" class="btn btn-dark">
+                                    <button type="submit" class="btn btn-primary" style="background-color: #EC8951;">
                                         <i class="ri-filter-line me-1"></i> Apply Filters
                                     </button>
                                     <a href="{{ route('home') }}" class="btn btn-outline-secondary">
@@ -245,6 +243,10 @@
                                     @if(!empty($offerItems))
                                         <ul class="offer-panel">{!! implode('', $offerItems) !!}</ul>
                                     @endif
+                                    
+                                    <button onclick="orderNow({{ $product->id }})" class="btn btn-order-now w-100 mt-3">
+                                        Order Now
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -273,6 +275,8 @@
         const isAuthenticated = @json(auth()->check());
         const loginUrl = "{{ route('login') }}";
         const csrfToken = "{{ csrf_token() }}";
+        const checkoutUrl = "{{ route('checkout.show') }}";
+        
         function requireAuth(callback) {
             if (!isAuthenticated) {
                 window.location.href = loginUrl;
@@ -280,6 +284,36 @@
             }
             return callback();
         }
+        
+        function orderNow(productId) {
+            // Add to cart and redirect to checkout (works for both authenticated and guest users)
+            fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to checkout page
+                    window.location.href = checkoutUrl;
+                } else {
+                    showNotification(data.message || 'Failed to add product to cart', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to process order', 'error');
+            });
+        }
+        
         function addToCart(productId) {
             requireAuth(() => {
                 fetch('/cart/add', {
@@ -546,6 +580,31 @@
                 display: block;
             }
             section.blog .slick-slide { height: auto; }
+            
+            /* Order Now Button Styling */
+            .btn-order-now {
+                background-color: #EC8951;
+                color: #fff;
+                border: none;
+                padding: 12px 20px;
+                font-size: 14px;
+                font-weight: 600;
+                text-transform: uppercase;
+                border-radius: 4px;
+                text-decoration: none;
+                display: block;
+                text-align: center;
+                transition: all 0.3s ease;
+            }
+            .btn-order-now:hover {
+                background-color: #EC8951;
+                color: #fff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+            .btn-order-now:active {
+                transform: translateY(0);
+            }
         </style>
     <section class="blog pt-0 ratio2_3 mb-5">
         <div class="container">

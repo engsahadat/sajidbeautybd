@@ -45,14 +45,6 @@ class CartController extends Controller
     public function add(Request $request)
     {
         try {
-            if (!Auth::check()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Please login to add items to cart',
-                    'redirect' => route('login')
-                ], 401);
-            }
-
             $data = $request->validate([
                 'product_id' => ['required','integer','exists:products,id'],
                 'variant_id' => ['nullable','integer','exists:product_variants,id'],

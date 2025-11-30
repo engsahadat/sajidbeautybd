@@ -155,14 +155,14 @@
                   <span class="pay-name">SSLCommerz</span>
                 </label>
               </div> --}}
-              <div class="col-sm-6">
+              {{-- <div class="col-sm-6">
                 <input class="pay-radio" type="radio" name="payment_method" id="pm_bkash" value="bkash">
                 <label class="pay-tile" for="pm_bkash">
                   <img class="pay-img" src="{{ asset('images/pay_bkash.svg') }}" alt="bKash"
                     onerror="this.style.display='none'">
                   <span class="pay-name">bKash</span>
                 </label>
-              </div>
+              </div> --}}
               <div class="col-sm-6">
                 <input class="pay-radio" type="radio" name="payment_method" id="pm_cod" value="cod" checked>
                 <label class="pay-tile" for="pm_cod">
