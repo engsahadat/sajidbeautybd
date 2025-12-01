@@ -1,14 +1,48 @@
 @extends('front-end.layouts.app')
+@push('styles')
+<style>
+  .order-header {
+    background-color: #f8f9fa;
+    padding: 40px 0;
+    margin-bottom: 40px;
+  }
+  .order-header h2 {
+    color: #333;
+    font-weight: 600;
+  }
+  @media (max-width: 768px) {
+    .order-header {
+      padding: 1.5rem 0;
+    }
+    .order-header h2 {
+      font-size: 1.5rem;
+    }
+  }
+  @media (max-width: 576px) {
+    .order-header {
+      padding: 1rem 0;
+    }
+    .order-header h2 {
+      font-size: 1.25rem;
+    }
+  }
+</style>
+@endpush
 @section('content')
-<section class="section-b-space mt-4">
+<div class="order-header">
   <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
       <h2 class="mb-0">Order {{ $order->order_number }}</h2>
       <div class="d-flex gap-2">
         <span class="badge bg-{{ $order->status==='delivered' ? 'success' : ($order->status==='shipped' ? 'primary' : ($order->status==='processing' ? 'info text-dark' : ($order->status==='cancelled' ? 'danger' : 'secondary'))) }}">{{ ucfirst($order->status) }}</span>
         <span class="badge bg-{{ $order->payment_status==='paid' ? 'success' : ($order->payment_status==='pending' ? 'warning text-dark' : ($order->payment_status==='refunded' ? 'secondary' : 'danger')) }}">{{ ucwords(str_replace('_',' ',$order->payment_status)) }}</span>
       </div>
     </div>
+  </div>
+</div>
+
+<section class="section-b-space mt-0">
+  <div class="container">
     @php
       $steps = ['pending' => 'Pending', 'processing' => 'Processing', 'shipped' => 'Shipped', 'delivered' => 'Delivered'];
       $orderStatus = strtolower($order->status ?? 'pending');
@@ -18,15 +52,28 @@
       <div class="card-body">
         <h5 class="mb-3">Order Status</h5>
         <style>
-          .order-steps{display:flex;gap:12px;justify-content:space-between}
-          .order-step{flex:1;text-align:center}
-          .order-step .dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600}
+          .order-steps{display:flex;gap:0;justify-content:space-between;overflow-x:auto;overflow-y:hidden;padding-bottom:8px;align-items:flex-start}
+          .order-steps::-webkit-scrollbar{height:6px}
+          .order-steps::-webkit-scrollbar-track{background:#f1f1f1;border-radius:3px}
+          .order-steps::-webkit-scrollbar-thumb{background:#EC8951;border-radius:3px}
+          .order-steps::-webkit-scrollbar-thumb:hover{background:#d97438}
+          .order-step{flex:1;text-align:center;min-width:100px;position:relative}
+          .order-step .dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600;position:relative;z-index:2}
           .order-step.complete .dot{background:#22c55e;color:#fff}
           .order-step.current .dot{background:#0d6efd;color:#fff}
           .order-step.pending .dot{background:#e5e7eb;color:#6b7280}
-          .order-step .label{display:block;margin-top:6px;font-size:.9rem}
-          .order-step .bar{height:4px;background:#e5e7eb;margin-top:10px;border-radius:2px;position:relative}
-          .order-step.complete .bar,.order-step.current .bar{background:#0d6efd}
+          .order-step .label{display:block;margin-top:6px;font-size:.9rem;white-space:nowrap}
+          .order-step .bar{height:4px;background:#e5e7eb;position:absolute;top:14px;left:50%;right:-50%;z-index:1}
+          .order-step.complete .bar{background:#0d6efd}
+          .order-step.current .bar{background:#0d6efd}
+          .order-step:last-child .bar{display:none}
+          @media (max-width:768px){
+            .order-steps{gap:0}
+            .order-step{min-width:80px}
+            .order-step .dot{width:24px;height:24px;font-size:.8rem}
+            .order-step .label{font-size:.75rem}
+            .order-step .bar{top:12px}
+          }
         </style>
         <div class="order-steps">
           @foreach($steps as $key=>$label)
