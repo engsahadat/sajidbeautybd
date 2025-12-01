@@ -59,18 +59,24 @@ class AppServiceProvider extends ServiceProvider
             $wishlistCount = 0;
             $compareCount = 0;
             
-            if (Auth::check()) {
-                try {
-                    $cart = ShoppingCart::forCurrent()->with('items')->first();
-                    $cartCount = $cart ? $cart->items->sum('quantity') : 0;
-                    
+            try {
+                // Get cart count for both authenticated users and guests
+                $cart = ShoppingCart::forCurrent()->with('items')->first();
+                $cartCount = $cart ? $cart->items->sum('quantity') : 0;
+                
+                if (Auth::check()) {
+                    // Wishlist and compare from database for authenticated users
                     $wishlistCount = WishlistItem::where('user_id', Auth::id())->count();
                     $compareCount = Compare::where('user_id', Auth::id())->count();
-                } catch (\Throwable $e) {
-                    $cartCount = 0;
-                    $wishlistCount = 0;
-                    $compareCount = 0;
+                } else {
+                    // Wishlist and compare from session for guest users
+                    $wishlistCount = count(session()->get('guest_wishlist', []));
+                    $compareCount = count(session()->get('guest_compare', []));
                 }
+            } catch (\Throwable $e) {
+                $cartCount = 0;
+                $wishlistCount = 0;
+                $compareCount = 0;
             }
             $view->with('categories', $categories);
             $view->with('brands', $brands);

@@ -137,14 +137,12 @@
                                     <img src="{{ $product->image_url }}" class="img-fluid blur-up lazyload" alt="{{ $product->name }}">
                                 </a>
 
-                                @if(($product->reviews_count ?? 0) > 0)
-                                    <div class="rating-label">
-                                        <i class="ri-star-fill"></i>
-                                        <span>{{ number_format($product->reviews_avg_rating ?? $product->average_rating ?? 4.5, 1) }}</span>
-                                    </div>
-                                @endif
-
-                                <div class="cart-info">
+                @if(($product->reviews_count ?? 0) > 0 && ($product->reviews_avg_rating ?? $product->average_rating ?? 0) > 0)
+                    <div class="rating-label">
+                        <i class="ri-star-fill"></i>
+                        <span>{{ number_format($product->reviews_avg_rating ?? $product->average_rating, 1) }}</span>
+                    </div>
+                @endif                                <div class="cart-info">
                                     <a href="#!" onclick="toggleWishlist({{ $product->id }})" title="Add to Wishlist" class="wishlist-icon wishlist-btn-{{ $product->id }}">
                                         <i class="ri-heart-line wishlist-icon-{{ $product->id }}"></i>
                                     </a>
@@ -198,6 +196,10 @@
                                 @if(!empty($offerItems))
                                     <ul class="offer-panel">{!! implode('', $offerItems) !!}</ul>
                                 @endif
+                                
+                                <button onclick="orderNow({{ $product->id }})" class="btn btn-order-now w-100 mt-3">
+                                    Order Now
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -224,11 +226,39 @@
     </div>
 </section>
 
+<style>
+    /* Order Now Button Styling */
+    .btn-order-now {
+        background-color: #EC8951;
+        color: #fff;
+        border: none;
+        padding: 12px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        border-radius: 4px;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    .btn-order-now:hover {
+        background-color: #EC8951;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .btn-order-now:active {
+        transform: translateY(0);
+    }
+</style>
+
 <!-- JavaScript Functions -->
 <script>
     const isAuthenticated = @json(auth()->check());
     const loginUrl = "{{ route('login') }}";
     const csrfToken = "{{ csrf_token() }}";
+    const checkoutUrl = "{{ route('checkout.show') }}";
 
     function requireAuth(callback) {
         if (!isAuthenticated) {
@@ -237,33 +267,59 @@
         }
         return callback();
     }
+    
+    // Order Now function - adds to cart and redirects to checkout
+    function orderNow(productId) {
+        fetch('/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = checkoutUrl;
+            } else {
+                showNotification(data.message || 'Failed to add product to cart', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to process order', 'error');
+        });
+    }
 
     function addToCart(productId) {
-        requireAuth(() => {
-            fetch('/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    product_id: productId,
-                    quantity: 1
-                })
+        fetch('/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                quantity: 1
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Product added to cart successfully!', 'success');
-                    updateCartCount(data.cart_count);
-                } else {
-                    showNotification(data.message || 'Failed to add product to cart', 'error');
-                }
-            })
-            .catch(error => {
-                showNotification('Failed to add product to cart', 'error');
-            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Product added to cart successfully!', 'success');
+                updateCartCount(data.cart_count);
+            } else {
+                showNotification(data.message || 'Failed to add product to cart', 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Failed to add product to cart', 'error');
         });
     }
 

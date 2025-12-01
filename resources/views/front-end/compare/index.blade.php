@@ -22,8 +22,12 @@
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="card">
-                            <div class="card-header">
-                                <h5><i class="ri-refresh-line me-2"></i>Product Comparison ({{ $compareItems->count() }}/4 products)</h5>
+                            <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                                <h5 class="mb-1 mb-md-0 d-flex align-items-center gap-2">
+                                    <i class="ri-refresh-line"></i>
+                                    <span>Product Comparison</span>
+                                    <span class="badge bg-primary rounded-pill">{{ $compareItems->count() }}/4</span>
+                                </h5>
                                 <small class="text-muted">You can compare up to 4 products at a time</small>
                             </div>
                             <div class="card-body p-0">
@@ -34,10 +38,10 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Product</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
+                                                    <td class="text-center align-top">
                                                         <div class="compare-remove-btn">
                                                             <button class="btn btn-danger btn-sm" 
-                                                                    onclick="removeFromCompare({{ $item->product->id }}, {{ $item->id }})"
+                                                                    onclick="removeFromCompare({{ $item->product->id }})"
                                                                     title="Remove from comparison">
                                                                 <i class="ri-close-line"></i>
                                                             </button>
@@ -60,7 +64,7 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Price</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
+                                                    <td class="text-center align-middle">
                                                         @if($item->product->sale_price && $item->product->sale_price > 0)
                                                             <h6 class="price text-success">
                                                                 ৳{{ number_format($item->product->sale_price, 2) }}
@@ -79,7 +83,7 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Brand</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
+                                                    <td class="text-center align-middle">
                                                         {{ $item->product->brand->name ?? 'N/A' }}
                                                     </td>
                                                 @endforeach
@@ -89,7 +93,7 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Category</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
+                                                    <td class="text-center align-middle">
                                                         {{ $item->product->category->name ?? 'N/A' }}
                                                     </td>
                                                 @endforeach
@@ -99,7 +103,7 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Stock Status</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
+                                                    <td class="text-center align-middle">
                                                         @if($item->product->stock_status === 'in_stock')
                                                             <span class="badge bg-success">In Stock</span>
                                                         @elseif($item->product->stock_status === 'out_of_stock')
@@ -115,7 +119,7 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Description</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
+                                                    <td class="text-center align-top">
                                                         <small>{{ Str::limit($item->product->short_description ?? 'No description available', 100) }}</small>
                                                     </td>
                                                 @endforeach
@@ -125,20 +129,20 @@
                                             <tr>
                                                 <td class="compare-label"><strong>Actions</strong></td>
                                                 @foreach($compareItems as $item)
-                                                    <td class="text-center">
-                                                        <div class="btn-group-vertical gap-2">
+                                                    <td class="text-center align-middle">
+                                                        <div class="compare-actions d-inline-flex flex-column gap-2">
                                                             @if($item->product->stock_status === 'in_stock')
-                                                                <button class="btn btn-animation btn-sm" 
+                                                                <button class="btn btn-animation btn-solid btn-sm px-3" 
                                                                         onclick="addToCart({{ $item->product->id }})">
                                                                     <i class="ri-shopping-cart-line me-1"></i>Add to Cart
                                                                 </button>
                                                             @endif
-                                                            <button class="btn btn-outline-primary btn-sm" 
+                                                            <button class="btn btn-outline-primary btn-sm px-3" 
                                                                     onclick="addToWishlist({{ $item->product->id }})">
                                                                 <i class="ri-heart-line me-1"></i>Add to Wishlist
                                                             </button>
                                                             <a href="{{ route('home.product.details', $item->product->id) }}" 
-                                                               class="btn btn-outline-secondary btn-sm">
+                                                               class="btn btn-outline-secondary btn-sm px-3">
                                                                 <i class="ri-eye-line me-1"></i>View Details
                                                             </a>
                                                         </div>
@@ -198,7 +202,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 showNotification('Failed to add product to cart', 'error');
             });
         }
@@ -226,36 +229,37 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 showNotification('Failed to add product to wishlist', 'error');
             });
         }
 
         // Remove from compare function
-        function removeFromCompare(productId, compareItemId) {
+        function removeFromCompare(productId) {
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('_token', '{{ csrf_token() }}');
+
             fetch('{{ route('cart.toggleCompare') }}', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    product_id: productId,
-                    action: 'remove'
-                })
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Update header count
+                    if (data.compare_count !== undefined) {
+                        setCompareCount(data.compare_count);
+                    }
                     location.reload(); // Reload to update the comparison table
-                    showNotification('Product removed from comparison', 'info');
                 } else {
                     showNotification(data.message || 'Failed to remove product from comparison', 'error');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 showNotification('Failed to remove product from comparison', 'error');
             });
         }
@@ -284,29 +288,35 @@
     </script>
 
     <style>
-        .compare-table {
-            min-width: 800px;
+        /* Layout */
+        .compare-table { min-width: 900px; border-collapse: separate; border-spacing: 0; }
+        .compare-table tr + tr td { border-top: 1px solid #eef1f4; }
+        .compare-table td { position: relative; padding: 16px; vertical-align: middle; background: #fff; }
+        
+        /* Sticky first column for easier scanning */
+        .compare-label { 
+            background-color: #f8f9fa; font-weight: 700; vertical-align: middle; min-width: 160px; 
+            position: sticky; left: 0; z-index: 2; box-shadow: 4px 0 0 #fff inset; 
         }
-        .compare-label {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            vertical-align: middle;
-            min-width: 150px;
+
+        /* Product visuals */
+        .compare-product-img { border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+        .compare-remove-btn { position: absolute; top: 8px; right: 8px; z-index: 5; }
+
+        /* Actions */
+        .compare-actions .btn { min-width: 150px; }
+
+        /* Card polish */
+        .compare-section .card { border: 1px solid #eef1f4; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+        .compare-section .card-header { background: #fff; border-bottom: 1px solid #eef1f4; }
+
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .compare-actions .btn { min-width: 100%; }
         }
-        .compare-product-img {
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .compare-remove-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-        .compare-table td {
-            position: relative;
-            padding: 15px;
-            vertical-align: middle;
+        @media (max-width: 767.98px) {
+            .compare-table { min-width: 760px; }
+            .compare-label { min-width: 140px; }
         }
     </style>
 @endsection

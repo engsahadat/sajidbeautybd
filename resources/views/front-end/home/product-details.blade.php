@@ -1042,34 +1042,32 @@
         
         // Add to Cart functionality
         function addToCart(productId) {
-            console.log('Add to cart clicked for product:', productId);
             
-            requireAuth(() => {
-                // Get quantity from either desktop or mobile input
-                const desktopInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
-                const mobileInput = document.querySelector('.mobile-quantity');
-                const quantityInput = desktopInput || mobileInput;
-                const quantity = quantityInput ? quantityInput.value || 1 : 1;
-                const variantId = window.selectedVariantId || null;
-                
-                const requestData = {
-                    product_id: productId,
-                    quantity: parseInt(quantity)
-                };
-                
-                if (variantId) {
-                    requestData.variant_id = variantId;
-                }
-                
-                fetch('{{ route('cart.add') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(requestData)
-                })
+            // Get quantity from either desktop or mobile input
+            const desktopInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
+            const mobileInput = document.querySelector('.mobile-quantity');
+            const quantityInput = desktopInput || mobileInput;
+            const quantity = quantityInput ? quantityInput.value || 1 : 1;
+            const variantId = window.selectedVariantId || null;
+            
+            const requestData = {
+                product_id: productId,
+                quantity: parseInt(quantity)
+            };
+            
+            if (variantId) {
+                requestData.variant_id = variantId;
+            }
+            
+            fetch('{{ route('cart.add') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -1085,152 +1083,143 @@
                     console.error('Error:', error);
                     showNotification('Failed to add product to cart', 'error');
                 });
-            });
         }
         
         // Wishlist functionality
         function toggleWishlist(productId) {
-            console.log('Wishlist clicked for product:', productId);
             
-            requireAuth(() => {
-                const icon = document.getElementById('wishlist-icon');
-                const text = document.getElementById('wishlist-text');
-                const btn = document.getElementById('wishlist-btn');
-                
-                const formData = new FormData();
-                formData.append('product_id', productId);
-                formData.append('_token', csrfToken);
-                
-                fetch('{{ route('cart.toggleWishlist') }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.action === 'added') {
-                            icon.classList.remove('ri-heart-line');
-                            icon.classList.add('ri-heart-fill');
-                            text.textContent = 'In Wishlist';
-                            btn.style.color = '#e74c3c';
-                            showNotification('Added to wishlist!', 'success');
-                        } else {
-                            icon.classList.remove('ri-heart-fill');
-                            icon.classList.add('ri-heart-line');
-                            text.textContent = 'Add To Wishlist';
-                            btn.style.color = '';
-                            showNotification('Removed from wishlist', 'info');
-                        }
-                        if (data.wishlist_count !== undefined) {
-                            setWishlistCount(data.wishlist_count);
-                        }
+            const icon = document.getElementById('wishlist-icon');
+            const text = document.getElementById('wishlist-text');
+            const btn = document.getElementById('wishlist-btn');
+            
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('_token', csrfToken);
+            
+            fetch('{{ route('cart.toggleWishlist') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.action === 'added') {
+                        icon.classList.remove('ri-heart-line');
+                        icon.classList.add('ri-heart-fill');
+                        text.textContent = 'In Wishlist';
+                        btn.style.color = '#e74c3c';
+                        showNotification('Added to wishlist!', 'success');
                     } else {
-                        showNotification(data.message || 'Failed to update wishlist', 'error');
+                        icon.classList.remove('ri-heart-fill');
+                        icon.classList.add('ri-heart-line');
+                        text.textContent = 'Add To Wishlist';
+                        btn.style.color = '';
+                        showNotification('Removed from wishlist', 'info');
                     }
-                })
-                .catch(error => {
-                    console.error('Wishlist error:', error);
-                    showNotification('Failed to update wishlist', 'error');
-                });
+                    if (data.wishlist_count !== undefined) {
+                        setWishlistCount(data.wishlist_count);
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to update wishlist', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Wishlist error:', error);
+                showNotification('Failed to update wishlist', 'error');
             });
         }
         function toggleCompare(productId) {
-            requireAuth(() => {
-                const icon = document.getElementById('compare-icon');
-                const text = document.getElementById('compare-text');
-                const btn = document.getElementById('compare-btn');
-                
-                const formData = new FormData();
-                formData.append('product_id', productId);
-                formData.append('_token', csrfToken);
-                
-                fetch('{{ route('cart.toggleCompare') }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        if (data.action === 'added') {
-                            icon.classList.remove('ri-refresh-line');
-                            icon.classList.add('ri-check-line');
-                            text.textContent = 'In Compare';
-                            btn.style.color = '#27ae60';
-                            showNotification('Added to compare list!', 'success');
-                        } else {
-                            icon.classList.remove('ri-check-line');
-                            icon.classList.add('ri-refresh-line');
-                            text.textContent = 'Add To Compare';
-                            btn.style.color = '';
-                            showNotification('Removed from compare list', 'info');
-                        }
-                        if (data.compare_count !== undefined) {
-                            const countElements = document.querySelectorAll('.compare-count');
-                            countElements.forEach(el => el.textContent = data.compare_count);
-                        }
+            const icon = document.getElementById('compare-icon');
+            const text = document.getElementById('compare-text');
+            const btn = document.getElementById('compare-btn');
+            
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('_token', csrfToken);
+            
+            fetch('{{ route('cart.toggleCompare') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.action === 'added') {
+                        icon.classList.remove('ri-refresh-line');
+                        icon.classList.add('ri-check-line');
+                        text.textContent = 'In Compare';
+                        btn.style.color = '#27ae60';
+                        showNotification('Added to compare list!', 'success');
                     } else {
-                        showNotification(data.message || 'Failed to update compare list', 'error');
+                        icon.classList.remove('ri-check-line');
+                        icon.classList.add('ri-refresh-line');
+                        text.textContent = 'Add To Compare';
+                        btn.style.color = '';
+                        showNotification('Removed from compare list', 'info');
                     }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Failed to update compare list', 'error');
-                });
+                    if (data.compare_count !== undefined) {
+                        setCompareCount(data.compare_count);
+                    }
+                } else {
+                    showNotification(data.message || 'Failed to update compare list', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to update compare list', 'error');
             });
         }
         function buyNow(productId) {
-            requireAuth(() => {
-                // Get quantity from either desktop or mobile input
-                const desktopInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
-                const mobileInput = document.querySelector('.mobile-quantity');
-                const quantityInput = desktopInput || mobileInput;
-                const quantity = quantityInput ? quantityInput.value : 1;
-                const variantId = window.selectedVariantId || null;
-                fetch('{{ route('cart.add') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        product_id: productId,
-                        variant_id: variantId,
-                        quantity: parseInt(quantity || 1, 10)
-                    })
+            // Get quantity from either desktop or mobile input
+            const desktopInput = document.querySelector('.col-lg-4:last-child input[name="quantity"]');
+            const mobileInput = document.querySelector('.mobile-quantity');
+            const quantityInput = desktopInput || mobileInput;
+            const quantity = quantityInput ? quantityInput.value : 1;
+            const variantId = window.selectedVariantId || null;
+            fetch('{{ route('cart.add') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    variant_id: variantId,
+                    quantity: parseInt(quantity || 1, 10)
                 })
-                .then(async (response) => {
-                    if (response.redirected) {
-                        // Likely redirected to login page
-                        window.location.href = response.url || loginUrl;
-                        return Promise.reject('Redirected');
-                    }
-                    const ct = response.headers.get('content-type') || '';
-                    if (!ct.includes('application/json')) {
-                        window.location.href = loginUrl;
-                        return Promise.reject('Non-JSON response');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        window.location.href = '/checkout';
-                    } else {
-                        showNotification(data.message || 'Failed to proceed to checkout', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Failed to proceed to checkout', 'error');
-                });
+            })
+            .then(async (response) => {
+                if (response.redirected) {
+                    // Likely redirected to login page
+                    window.location.href = response.url || loginUrl;
+                    return Promise.reject('Redirected');
+                }
+                const ct = response.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    window.location.href = loginUrl;
+                    return Promise.reject('Non-JSON response');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '/checkout';
+                } else {
+                    showNotification(data.message || 'Failed to proceed to checkout', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to proceed to checkout', 'error');
             });
         }
         function shareProduct() {
@@ -1245,7 +1234,6 @@
                 }).then(() => {
                     showNotification('Product shared successfully!', 'success');
                 }).catch((error) => {
-                    console.log('Error sharing:', error);
                     fallbackShare(productUrl, productTitle);
                 });
             } else {

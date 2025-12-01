@@ -190,13 +190,13 @@ Route::controller(CartController::class)->prefix('cart')->group(function () {
 
     // Wishlist routes
     Route::post('/cart/wishlist/toggle', 'toggleWishlist')->name('cart.toggleWishlist');
-    Route::get('/wishlist', 'wishlist')->name('wishlist.index')->middleware('auth');
+    Route::get('/wishlist', 'wishlist')->name('wishlist.index');
     Route::get('/wishlist/count', 'getWishlistCount')->name('wishlist.count');
     Route::get('/wishlist/items', 'getWishlistItems')->name('get.wishlist.items');
 
     // Compare routes
     Route::post('/cart/compare/toggle', 'toggleCompare')->name('cart.toggleCompare');
-    Route::get('/compare', 'compare')->name('compare.index')->middleware('auth');
+    Route::get('/compare', 'compare')->name('compare.index');
     Route::get('/compare/count', 'getCompareCount')->name('compare.count');
     Route::get('/compare/items', 'getCompareItems')->name('get.compare.items');
     // User preferences route

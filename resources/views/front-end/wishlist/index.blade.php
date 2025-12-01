@@ -39,7 +39,7 @@
                                         </thead>
                                         <tbody>
                                             @foreach($wishlistItems as $item)
-                                                <tr id="wishlist-item-{{ $item->id }}">
+                                                <tr id="wishlist-item-{{ $item->product_id }}">
                                                     <td>
                                                         <a href="{{ route('home.product.details', $item->product->id) }}">
                                                             <img src="{{ $item->product->image_url }}" 
@@ -80,12 +80,12 @@
                                                         <div class="btn-group-vertical gap-2">
                                                             @if($item->product->stock_status === 'in_stock')
                                                                 <button class="btn btn-animation btn-sm" 
-                                                                        onclick="moveToCart({{ $item->product->id }}, {{ $item->id }})">
+                                                                        onclick="moveToCart({{ $item->product->id }})">
                                                                     <i class="ri-shopping-cart-line me-1"></i>Move to Cart
                                                                 </button>
                                                             @endif
                                                             <button class="btn btn-outline-danger btn-sm" 
-                                                                    onclick="removeFromWishlist({{ $item->product->id }}, {{ $item->id }})">
+                                                                    onclick="removeFromWishlist({{ $item->product->id }})">
                                                                 <i class="ri-delete-bin-line me-1"></i>Remove
                                                             </button>
                                                         </div>
@@ -122,7 +122,7 @@
     <!-- wishlist section end -->
 
     <script>
-        function moveToCart(productId, wishlistItemId) {
+        function moveToCart(productId) {
             fetch('/cart/add', {
                 method: 'POST',
                 headers: {
@@ -138,8 +138,12 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    removeFromWishlist(productId, wishlistItemId, false);
+                    removeFromWishlist(productId, false);
                     showNotification('Product moved to cart successfully!', 'success');
+                    // Update cart count
+                    if (data.cart_count !== undefined) {
+                        updateCartCount(data.cart_count);
+                    }
                 } else {
                     showNotification(data.message || 'Failed to move product to cart', 'error');
                 }
@@ -149,26 +153,41 @@
                 showNotification('Failed to move product to cart', 'error');
             });
         }
-        function removeFromWishlist(productId, wishlistItemId, showMessage = true) {
+
+        function removeFromWishlist(productId, showMessage = true) {
+            const formData = new FormData();
+            formData.append('product_id', productId);
+            formData.append('_token', '{{ csrf_token() }}');
+
             fetch('{{ route('cart.toggleWishlist') }}', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    product_id: productId,
-                    action: 'remove'
-                })
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    const row = document.getElementById('wishlist-item-' + wishlistItemId);
+                    // Remove the row from the table
+                    const row = document.getElementById('wishlist-item-' + productId);
                     if (row) {
                         row.remove();
                     }
+                    
+                    // Update header wishlist count
+                    if (data.wishlist_count !== undefined) {
+                        setWishlistCount(data.wishlist_count);
+                        
+                        // Update page title count
+                        const headerElement = document.querySelector('.card-header h5');
+                        if (headerElement) {
+                            headerElement.innerHTML = `<i class="ri-heart-fill me-2"></i>My Wishlist (${data.wishlist_count} items)`;
+                        }
+                    }
+                    
+                    // Check if wishlist is empty
                     const remainingItems = document.querySelectorAll('tbody tr').length;
                     if (remainingItems === 0) {
                         location.reload();
@@ -186,6 +205,14 @@
                 showNotification('Failed to remove product from wishlist', 'error');
             });
         }
+
+        function updateCartCount(count) {
+            const cartCountElements = document.querySelectorAll('.cart-count');
+            cartCountElements.forEach(element => {
+                element.textContent = count;
+            });
+        }
+
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;

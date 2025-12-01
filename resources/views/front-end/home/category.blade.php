@@ -68,7 +68,6 @@
 										<img src="{{ $product->image_url }}"
 											class="img-fluid blur-up lazyload" alt="{{ $product->name }}">
 									</a>
-									<div class="rating-label"><i class="ri-star-fill"></i><span>4.5</span></div>
 									<div class="cart-info">
 										<a href="#!" onclick="toggleWishlist({{ $product->id }})" 
 										   title="Add to Wishlist" class="wishlist-icon wishlist-btn-{{ $product->id }}">
@@ -134,6 +133,10 @@
 												In Stock - Fast Delivery</li>
 										@endif
 									</ul>
+									
+									<button onclick="orderNow({{ $product->id }})" class="btn btn-order-now w-100 mt-3">
+										Order Now
+									</button>
 								</div>
 							</div>
 						</div>
@@ -144,51 +147,100 @@
 	</div>
 </section>
 
+<style>
+	/* Order Now Button Styling */
+	.btn-order-now {
+		background-color: #EC8951;
+		color: #fff;
+		border: none;
+		padding: 12px 20px;
+		font-size: 14px;
+		font-weight: 600;
+		text-transform: uppercase;
+		border-radius: 4px;
+		text-decoration: none;
+		display: block;
+		text-align: center;
+		transition: all 0.3s ease;
+	}
+	.btn-order-now:hover {
+		background-color: #d97540;
+		color: #fff;
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+	}
+	.btn-order-now:active {
+		transform: translateY(0);
+	}
+</style>
+
 <script>
 	// Check if user is authenticated
 	const isAuthenticated = @json(auth()->check());
 	const loginUrl = "{{ route('login') }}";
 	const csrfToken = "{{ csrf_token() }}";
+	const checkoutUrl = "{{ route('checkout.show') }}";
 	
 	// Authentication check function
 	function requireAuth(callback) {
-		if (!isAuthenticated) {
-			if (confirm('You need to login to perform this action. Would you like to login now?')) {
-				window.location.href = loginUrl;
-			}
-			return false;
-		}
+		// Allow both authenticated and guest users for wishlist/compare
 		return callback();
+	}
+	
+	// Order Now function - adds to cart and redirects to checkout
+	function orderNow(productId) {
+		fetch('/cart/add', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-CSRF-TOKEN': csrfToken,
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				product_id: productId,
+				quantity: 1
+			})
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.success) {
+				window.location.href = checkoutUrl;
+			} else {
+				showNotification(data.message || 'Failed to add product to cart', 'error');
+			}
+		})
+		.catch(error => {
+			console.error('Error:', error);
+			showNotification('Failed to process order', 'error');
+		});
 	}
 	
 	// Add to Cart functionality
 	function addToCart(productId) {
-		requireAuth(() => {
-			fetch('/cart/add', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-CSRF-TOKEN': csrfToken,
-					'Accept': 'application/json'
-				},
-				body: JSON.stringify({
-					product_id: productId,
-					quantity: 1
-				})
+		fetch('/cart/add', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-CSRF-TOKEN': csrfToken,
+				'Accept': 'application/json'
+			},
+			body: JSON.stringify({
+				product_id: productId,
+				quantity: 1
 			})
-			.then(response => response.json())
-			.then(data => {
-				if (data.success) {
-					showNotification('Product added to cart successfully!', 'success');
-					updateCartCount(data.cart_count);
-				} else {
-					showNotification(data.message || 'Failed to add product to cart', 'error');
-				}
-			})
-			.catch(error => {
-				console.error('Error:', error);
-				showNotification('Failed to add product to cart', 'error');
-			});
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.success) {
+				showNotification('Product added to cart successfully!', 'success');
+				updateCartCount(data.cart_count);
+			} else {
+				showNotification(data.message || 'Failed to add product to cart', 'error');
+			}
+		})
+		.catch(error => {
+			console.error('Error:', error);
+			showNotification('Failed to add product to cart', 'error');
 		});
 	}
 	
@@ -271,11 +323,10 @@
 						btn.style.color = '';
 						showNotification('Removed from compare list', 'info');
 					}
-					// Update header count immediately
-					if (data.compare_count !== undefined) {
-						const countElements = document.querySelectorAll('.compare-count');
-						countElements.forEach(el => el.textContent = data.compare_count);
-					}
+				// Update header count immediately
+				if (data.compare_count !== undefined) {
+					setCompareCount(data.compare_count);
+				}
 				} else {
 					showNotification(data.message || 'Failed to update compare list', 'error');
 				}

@@ -262,40 +262,51 @@ class CartController extends Controller
      */
     public function toggleWishlist(Request $request)
     {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please login to manage wishlist',
-                'redirect' => route('login')
-            ], 401);
-        }
-
         $data = $request->validate([
             'product_id' => ['required','integer','exists:products,id']
         ]);
 
-        $userId = Auth::id();
         $productId = $data['product_id'];
 
         try {
-            $existingItem = WishlistItem::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->first();
+            if (Auth::check()) {
+                // Authenticated user - use database
+                $userId = Auth::id();
+                $existingItem = WishlistItem::where('user_id', $userId)
+                    ->where('product_id', $productId)
+                    ->first();
 
-            if ($existingItem) {
-                $existingItem->delete();
-                $action = 'removed';
-                $message = 'Product removed from wishlist';
+                if ($existingItem) {
+                    $existingItem->delete();
+                    $action = 'removed';
+                    $message = 'Product removed from wishlist';
+                } else {
+                    WishlistItem::create([
+                        'user_id' => $userId,
+                        'product_id' => $productId
+                    ]);
+                    $action = 'added';
+                    $message = 'Product added to wishlist';
+                }
+
+                $wishlistCount = WishlistItem::where('user_id', $userId)->count();
             } else {
-                WishlistItem::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId
-                ]);
-                $action = 'added';
-                $message = 'Product added to wishlist';
+                // Guest user - use session
+                $wishlist = session()->get('guest_wishlist', []);
+                
+                if (in_array($productId, $wishlist)) {
+                    $wishlist = array_diff($wishlist, [$productId]);
+                    $action = 'removed';
+                    $message = 'Product removed from wishlist';
+                } else {
+                    $wishlist[] = $productId;
+                    $action = 'added';
+                    $message = 'Product added to wishlist';
+                }
+                
+                session()->put('guest_wishlist', array_values($wishlist));
+                $wishlistCount = count($wishlist);
             }
-
-            $wishlistCount = WishlistItem::where('user_id', $userId)->count();
 
             return response()->json([
                 'success' => true,
@@ -317,49 +328,68 @@ class CartController extends Controller
      */
     public function toggleCompare(Request $request)
     {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Please login to manage compare list',
-                'redirect' => route('login')
-            ], 401);
-        }
-
         $data = $request->validate([
             'product_id' => ['required','integer','exists:products,id']
         ]);
 
-        $userId = Auth::id();
         $productId = $data['product_id'];
 
         try {
-            $existingItem = Compare::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->first();
+            if (Auth::check()) {
+                // Authenticated user - use database
+                $userId = Auth::id();
+                $existingItem = Compare::where('user_id', $userId)
+                    ->where('product_id', $productId)
+                    ->first();
 
-            if ($existingItem) {
-                $existingItem->delete();
-                $action = 'removed';
-                $message = 'Product removed from compare list';
-            } else {
-                // Limit compare list to 4 items
-                $compareCount = Compare::where('user_id', $userId)->count();
-                if ($compareCount >= 4) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'You can only compare up to 4 products at a time'
-                    ], 400);
+                if ($existingItem) {
+                    $existingItem->delete();
+                    $action = 'removed';
+                    $message = 'Product removed from compare list';
+                } else {
+                    // Limit compare list to 4 items
+                    $compareCount = Compare::where('user_id', $userId)->count();
+                    if ($compareCount >= 4) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You can only compare up to 4 products at a time'
+                        ], 400);
+                    }
+
+                    Compare::create([
+                        'user_id' => $userId,
+                        'product_id' => $productId
+                    ]);
+                    $action = 'added';
+                    $message = 'Product added to compare list';
                 }
 
-                Compare::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId
-                ]);
-                $action = 'added';
-                $message = 'Product added to compare list';
+                $compareCount = Compare::where('user_id', $userId)->count();
+            } else {
+                // Guest user - use session
+                $compareList = session()->get('guest_compare', []);
+                
+                if (in_array($productId, $compareList)) {
+                    $compareList = array_diff($compareList, [$productId]);
+                    $action = 'removed';
+                    $message = 'Product removed from compare list';
+                } else {
+                    // Limit compare list to 4 items
+                    if (count($compareList) >= 4) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You can only compare up to 4 products at a time'
+                        ], 400);
+                    }
+                    
+                    $compareList[] = $productId;
+                    $action = 'added';
+                    $message = 'Product added to compare list';
+                }
+                
+                session()->put('guest_compare', array_values($compareList));
+                $compareCount = count($compareList);
             }
-
-            $compareCount = Compare::where('user_id', $userId)->count();
 
             return response()->json([
                 'success' => true,
@@ -418,10 +448,30 @@ class CartController extends Controller
      */
     public function wishlist()
     {
-        $wishlistItems = WishlistItem::with('product')
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->get();
+        if (Auth::check()) {
+            // Authenticated user - get from database
+            $wishlistItems = WishlistItem::with('product')
+                ->where('user_id', Auth::id())
+                ->latest()
+                ->get();
+        } else {
+            // Guest user - get from session
+            $productIds = session()->get('guest_wishlist', []);
+            if (!empty($productIds)) {
+                $products = Product::whereIn('id', $productIds)->get();
+                // Format as collection to match database structure
+                $wishlistItems = $products->map(function($product) {
+                    return (object)[
+                        'id' => $product->id,
+                        'product_id' => $product->id,
+                        'product' => $product,
+                        'created_at' => now()
+                    ];
+                });
+            } else {
+                $wishlistItems = collect();
+            }
+        }
 
         return view('front-end.wishlist.index', compact('wishlistItems'));
     }
@@ -431,10 +481,30 @@ class CartController extends Controller
      */
     public function compare()
     {
-        $compareItems = Compare::with('product')
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->get();
+        if (Auth::check()) {
+            // Authenticated user - get from database
+            $compareItems = Compare::with('product')
+                ->where('user_id', Auth::id())
+                ->latest()
+                ->get();
+        } else {
+            // Guest user - get from session
+            $productIds = session()->get('guest_compare', []);
+            if (!empty($productIds)) {
+                $products = Product::whereIn('id', $productIds)->get();
+                // Format as collection to match database structure
+                $compareItems = $products->map(function($product) {
+                    return (object)[
+                        'id' => $product->id,
+                        'product_id' => $product->id,
+                        'product' => $product,
+                        'created_at' => now()
+                    ];
+                });
+            } else {
+                $compareItems = collect();
+            }
+        }
 
         return view('front-end.compare.index', compact('compareItems'));
     }
@@ -465,14 +535,11 @@ class CartController extends Controller
      */
     public function getWishlistCount()
     {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => true,
-                'count' => 0
-            ]);
+        if (Auth::check()) {
+            $count = WishlistItem::where('user_id', Auth::id())->count();
+        } else {
+            $count = count(session()->get('guest_wishlist', []));
         }
-
-        $count = WishlistItem::where('user_id', Auth::id())->count();
 
         return response()->json([
             'success' => true,
@@ -485,14 +552,11 @@ class CartController extends Controller
      */
     public function getCompareCount()
     {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => true,
-                'count' => 0
-            ]);
+        if (Auth::check()) {
+            $count = Compare::where('user_id', Auth::id())->count();
+        } else {
+            $count = count(session()->get('guest_compare', []));
         }
-
-        $count = Compare::where('user_id', Auth::id())->count();
 
         return response()->json([
             'success' => true,

@@ -182,14 +182,12 @@
                                         <img src="{{ $product->image_url }}" class="img-fluid blur-up lazyload" alt="{{ $product->name }}">
                                     </a>
 
-                                    @if(($product->reviews_count ?? 0) > 0)
-                                        <div class="rating-label">
-                                            <i class="ri-star-fill"></i>
-                                            <span>{{ number_format($product->reviews_avg_rating ?? $product->average_rating ?? 4.5, 1) }}</span>
-                                        </div>
-                                    @endif
-
-                                    <div class="cart-info">
+                    @if(($product->reviews_count ?? 0) > 0 && ($product->reviews_avg_rating ?? $product->average_rating ?? 0) > 0)
+                        <div class="rating-label">
+                            <i class="ri-star-fill"></i>
+                            <span>{{ number_format($product->reviews_avg_rating ?? $product->average_rating, 1) }}</span>
+                        </div>
+                    @endif                                    <div class="cart-info">
                                         <a href="#!" onclick="toggleWishlist({{ $product->id }})" title="Add to Wishlist" class="wishlist-icon wishlist-btn-{{ $product->id }}">
                                             <i class="ri-heart-line wishlist-icon-{{ $product->id }}"></i>
                                         </a>
@@ -278,10 +276,7 @@
         const checkoutUrl = "{{ route('checkout.show') }}";
         
         function requireAuth(callback) {
-            if (!isAuthenticated) {
-                window.location.href = loginUrl;
-                return false;
-            }
+            // Allow both authenticated and guest users for wishlist/compare
             return callback();
         }
         
@@ -315,32 +310,30 @@
         }
         
         function addToCart(productId) {
-            requireAuth(() => {
-                fetch('/cart/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        product_id: productId,
-                        quantity: 1
-                    })
+            fetch('/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_id: productId,
+                    quantity: 1
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification('Product added to cart successfully!', 'success');
-                        updateCartCount(data.cart_count);
-                    } else {
-                        showNotification(data.message || 'Failed to add product to cart', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Failed to add product to cart', 'error');
-                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Product added to cart successfully!', 'success');
+                    updateCartCount(data.cart_count);
+                } else {
+                    showNotification(data.message || 'Failed to add product to cart', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Failed to add product to cart', 'error');
             });
         }
         function toggleWishlist(productId) {
@@ -421,8 +414,7 @@
                             showNotification('Removed from compare list', 'info');
                         }
                         if (data.compare_count !== undefined) {
-                            const countElements = document.querySelectorAll('.compare-count');
-                            countElements.forEach(el => el.textContent = data.compare_count);
+                            setCompareCount(data.compare_count);
                         }
                     } else {
                         showNotification(data.message || 'Failed to update compare list', 'error');

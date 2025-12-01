@@ -108,7 +108,6 @@
                                             <i class="ri-search-line"></i>
                                         </div>
                                     </li> --}}
-                                    @auth
                                     <li class="onhover-div mobile-wishlist">
                                         <a href="{{ route('wishlist.index') }}" class="position-relative" title="Wishlist">
                                             <i class="ri-heart-line"></i>
@@ -125,7 +124,6 @@
                                             @endif
                                         </a>
                                     </li>
-                                    @endauth
                                     <li class="onhover-div mobile-cart">
                                         <a href="{{ route('cart.index') }}" class="position-relative" title="Cart">
                                             <i class="ri-shopping-cart-line"></i>
@@ -169,17 +167,19 @@
     function setCompareCount(count) {
         try {
             const existing = document.querySelectorAll('.compare-count');
+            const compareLink = document.querySelector('a[href="{{ route('compare.index') }}"]');
+            
             if (count && parseInt(count) > 0) {
-                if (existing.length) { existing.forEach(el => el.textContent = count); return; }
-                const compareLink = document.querySelector('a[href="{{ route('compare.index') }}"]');
-                if (compareLink) {
+                if (existing.length) {
+                    existing.forEach(el => el.textContent = count);
+                } else if (compareLink) {
                     const span = document.createElement('span');
                     span.className = 'cart_qty_cls compare-count';
                     span.textContent = count;
                     compareLink.appendChild(span);
                 }
             } else {
-                if (existing.length) existing.forEach(el => el.remove());
+                existing.forEach(el => el.remove());
             }
         } catch (e) { console.error('setCompareCount error', e); }
     }
