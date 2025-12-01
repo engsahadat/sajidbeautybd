@@ -95,13 +95,15 @@
                             </div>
 
                             <!-- Buttons -->
-                            <div class="col-12 d-flex gap-2">
-                                <button type="submit" class="btn btn-dark">
-                                    <i class="ri-filter-line me-1"></i> Apply Filters
-                                </button>
-                                <a href="{{ route('home.all-products') }}" class="btn btn-outline-secondary">
-                                    <i class="ri-refresh-line me-1"></i> Reset
-                                </a>
+                            <div class="col-12">
+                                <div style="display: flex; gap: 15px; align-items: center;">
+                                    <button type="submit" style="background-color: #EC8951; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">
+                                        <i class="ri-filter-line"></i> Apply Filters
+                                    </button>
+                                    <a href="{{ route('home.all-products') }}" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#5a6268'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#6c757d'; this.style.transform='translateY(0)';">
+                                        <i class="ri-refresh-line"></i> Reset
+                                    </a>
+                                </div>
                             </div>
                         </form>
                     </div>

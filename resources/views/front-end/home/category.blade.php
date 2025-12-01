@@ -25,21 +25,21 @@
 								<input type="text" class="form-control" id="search" name="search" 
 									   placeholder="Search by product name..." value="{{ request('search') }}">
 							</div>
-							<div class="col-md-2">
-								<button type="submit" class="btn btn-dark w-100">
-									<i class="ri-search-line me-1"></i> Search
-								</button>
+						<div class="col-md-2">
+							<button type="submit" style="background-color: #EC8951; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">
+								<i class="ri-search-line"></i> Search
+							</button>
+						</div>
+						@if(request('search'))
+							<div class="col-12">
+								<a href="{{ route('home.category', $category->id) }}" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#5a6268'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#6c757d'; this.style.transform='translateY(0)';">
+									<i class="ri-close-line"></i> Clear Search
+								</a>
+								<span class="ms-3 text-muted">
+									Found <strong>{{ $products->count() }}</strong> products for "<strong>{{ request('search') }}</strong>"
+								</span>
 							</div>
-							@if(request('search'))
-								<div class="col-12">
-									<a href="{{ route('home.category', $category->id) }}" class="btn btn-outline-secondary">
-										<i class="ri-close-line me-1"></i> Clear Search
-									</a>
-									<span class="ms-3 text-muted">
-										Found <strong>{{ $products->count() }}</strong> products for "<strong>{{ request('search') }}</strong>"
-									</span>
-								</div>
-							@endif
+						@endif
 						</form>
 					</div>
 				</div>

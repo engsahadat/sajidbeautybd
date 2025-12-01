@@ -131,7 +131,7 @@
       </div>
     </div>
     <div class="mt-4">
-      <a href="{{ route('account.orders.index') }}" class="btn btn-secondary">Back to My Orders</a>
+      <a href="{{ route('account.orders.index') }}" style="background-color: #EC8951; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">Back to My Orders</a>
     </div>
   </div>
 </section>

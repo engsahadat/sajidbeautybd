@@ -51,6 +51,9 @@
 
     <!-- Theme css -->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
+    
+    <!-- Page specific styles -->
+    @stack('styles')
 </head>
 <body class="theme-color-1">
     <!-- header start -->

@@ -39,7 +39,7 @@
                       <form action="{{ route('cart.item.update', $item->id) }}" method="POST" class="d-flex align-items-center gap-2">
                         @csrf
                         <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" class="form-control" style="width:90px;">
-                        <button class="btn btn-sm btn-outline-primary">Update</button>
+                        <button style="background-color: #EC8951; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">Update</button>
                       </form>
                     </td>
                     <td>৳ {{ number_format($item->quantity * $item->unit_price, 2) }}</td>
@@ -62,7 +62,7 @@
         <form action="{{ route('cart.clear') }}" method="POST" onsubmit="return confirm('Clear cart?')" class="mt-2">
           @csrf
           @method('DELETE')
-          <button class="btn btn-outline-danger">Clear Cart</button>
+          <button style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#c82333'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#dc3545'; this.style.transform='translateY(0)';">Clear Cart</button>
         </form>
         @endif
       </div>
@@ -87,13 +87,13 @@
                     <span class="text-success">Coupon Applied:</span>
                     <strong id="applied-coupon-code">{{ $cart->coupon->code }}</strong>
                   </div>
-                  <button type="button" class="btn btn-sm btn-outline-danger" id="remove-coupon-btn" data-url="{{ route('cart.removeCoupon') }}">Remove</button>
+                  <button type="button" style="background-color: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease;" id="remove-coupon-btn" data-url="{{ route('cart.removeCoupon') }}" onmouseover="this.style.backgroundColor='#c82333'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#dc3545'; this.style.transform='translateY(0)';">Remove</button>
                 </div>
               @else
                 <form id="coupon-form" action="{{ route('cart.applyCoupon') }}" method="POST" class="d-flex gap-2">
                   @csrf
                   <input type="text" name="code" id="coupon-code-input" class="form-control" placeholder="Coupon code">
-                  <button type="button" class="btn btn-outline-primary" id="apply-coupon-btn">Apply</button>
+                  <button type="button" style="background-color: #EC8951; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s ease; white-space: nowrap;" id="apply-coupon-btn" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">Apply</button>
                 </form>
               @endif
             </div>
@@ -106,8 +106,8 @@
               <span>Total</span>
               <strong id="cart-total">৳ {{ number_format($cart?->total() ?? 0, 2) }}</strong>
             </div>
-            <a href="{{ route('checkout.show') }}" class="btn btn-primary w-100 mt-3">Proceed to Checkout</a>
-            <a href="{{ url('/') }}" class="btn btn-outline-secondary w-100 mt-2">Continue Shopping</a>
+            <a href="{{ route('checkout.show') }}" style="background-color: #EC8951; color: white; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; width: 100%; margin-top: 1rem;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">Proceed to Checkout</a>
+            <a href="{{ url('/') }}" style="background-color: #6c757d; color: white; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; width: 100%; margin-top: 0.5rem;" onmouseover="this.style.backgroundColor='#5a6268'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#6c757d'; this.style.transform='translateY(0)';">Continue Shopping</a>
           </div>
         </div>
       </div>

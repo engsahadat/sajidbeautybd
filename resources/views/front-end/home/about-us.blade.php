@@ -1,5 +1,76 @@
 @extends('front-end.layouts.app')
 @section('title', 'About Us')
+@push('styles')
+<style>
+	@media (max-width: 768px) {
+		.about-section {
+			padding: 2rem 0;
+		}
+		.about-section h2 {
+			font-size: 1.25rem;
+		}
+		.about-section p {
+			font-size: 0.95rem;
+		}
+		.store-info-box {
+			padding: 1.5rem;
+			margin-bottom: 1.5rem;
+		}
+		.stats-section h3 {
+			font-size: 1.75rem;
+		}
+		.values-card {
+			padding: 1.5rem;
+		}
+	}
+	@media (max-width: 576px) {
+		.about-section {
+			padding: 1.5rem 0;
+		}
+		.about-section h2 {
+			font-size: 1.1rem;
+		}
+		.about-section p {
+			font-size: 0.9rem;
+		}
+		.store-info-box {
+			padding: 1rem;
+		}
+		.stats-section {
+			padding: 2rem 0 !important;
+		}
+		.stats-section h3 {
+			font-size: 1.5rem;
+		}
+		.stats-section p {
+			font-size: 0.8rem;
+		}
+	}
+	.btn-custom-orange {
+		background-color: #EC8951;
+		color: white;
+		border: none;
+		padding: 10px 20px;
+		border-radius: 4px;
+		font-weight: 600;
+		cursor: pointer;
+		font-size: 14px;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		text-decoration: none;
+		transition: all 0.3s ease;
+	}
+	.btn-custom-orange:hover {
+		background-color: #d97438;
+		transform: translateY(-2px);
+		color: white;
+	}
+	.btn-custom-orange:active {
+		transform: translateY(0);
+	}
+</style>
+@endpush
 @section('content')
 <div class="py-4 border-bottom bg-light">
 	<div class="container">
@@ -14,7 +85,7 @@
 	</div>
 </div>
 
-<section class="py-5">
+<section class="py-5 about-section">
 	<div class="container">
 		<div class="row align-items-center g-4">
 			<div class="col-lg-6">
@@ -34,7 +105,7 @@
 				</ul>
 				<div class="row g-3">
 					<div class="col-md-6">
-						<div class="border rounded p-3 h-100">
+						<div class="border rounded store-info-box h-100 p-2">
 							<h6 class="fw-bold mb-2"><i class="ri-time-line me-1 text-primary"></i>{{ __('Store Hours') }}</h6>
 							<ul class="list-unstyled small mb-0">
 								<li class="d-flex justify-content-between"><span>Sunday</span><span>{{ \App\Models\Setting::get('hours_sunday', '10:30 AM – 8:30 PM') }}</span></li>
@@ -48,19 +119,19 @@
 						</div>
 					</div>
 					<div class="col-md-6">
-						<div class="border rounded p-3 h-100">
+						<div class="border rounded store-info-box h-100 p-2">
 							<h6 class="fw-bold mb-2"><i class="ri-truck-line me-1 text-primary"></i>{{ __('Delivery') }}</h6>
 							<p class="small mb-0">{{ __('Delivery within') }} <strong>{{ (int) (\App\Models\Setting::get('delivery_days', 3)) }}</strong> {{ __('day(s) across Bangladesh') }}</p>
 						</div>
 					</div>
 				</div>
-				<a href="{{ route('home.contactUs') }}" class="btn btn-primary btn-sm">Contact Us</a>
+				<a href="{{ route('home.contactUs') }}" class="btn-custom-orange mt-2">Contact Us</a>
 			</div>
 		</div>
 	</div>
 </section>
 
-<section class="py-5 bg-light">
+<section class="py-5 bg-light about-section">
 	<div class="container">
 		<div class="row g-4">
 			<div class="col-lg-4">
@@ -79,7 +150,7 @@
 	</div>
 </section>
 
-<section class="py-5">
+<section class="py-5 about-section">
 	<div class="container">
 		<div class="row mb-4">
 			<div class="col-lg-8">
@@ -89,25 +160,25 @@
 		</div>
 		<div class="row g-4">
 			<div class="col-sm-6 col-lg-3">
-				<div class="h-100 p-3 border rounded">
+				<div class="h-100 p-3 border rounded values-card">
 					<h6 class="text-uppercase small fw-bold mb-2">{{ __('Authenticity') }}</h6>
 					<p class="small mb-0">{{ __('Guaranteed original products. No compromises.') }}</p>
 				</div>
 			</div>
 			<div class="col-sm-6 col-lg-3">
-				<div class="h-100 p-3 border rounded">
+				<div class="h-100 p-3 border rounded values-card">
 					<h6 class="text-uppercase small fw-bold mb-2">{{ __('Integrity') }}</h6>
 					<p class="small mb-0">{{ __('Ethical sourcing & transparent business practices.') }}</p>
 				</div>
 			</div>
 			<div class="col-sm-6 col-lg-3">
-				<div class="h-100 p-3 border rounded">
+				<div class="h-100 p-3 border rounded values-card">
 					<h6 class="text-uppercase small fw-bold mb-2">{{ __('Service') }}</h6>
 					<p class="small mb-0">{{ __('We listen first and tailor solutions to your needs.') }}</p>
 				</div>
 			</div>
 			<div class="col-sm-6 col-lg-3">
-				<div class="h-100 p-3 border rounded">
+				<div class="h-100 p-3 border rounded values-card">
 					<h6 class="text-uppercase small fw-bold mb-2">{{ __('Education') }}</h6>
 					<p class="small mb-0">{{ __('We help you make informed product decisions.') }}</p>
 				</div>
@@ -116,19 +187,19 @@
 	</div>
 </section>
 
-<section class="py-5 bg-light">
+<section class="py-5 bg-light stats-section">
 	<div class="container">
 		<div class="row text-center">
 			<div class="col-6 col-md-3 mb-4 mb-md-0">
-				<h3 class="mb-0">5K+</h3>
+				<h3 class="mb-0">10K+</h3>
 				<p class="text-muted small mb-0">{{ __('Happy Customers') }}</p>
 			</div>
 			<div class="col-6 col-md-3 mb-4 mb-md-0">
-				<h3 class="mb-0">1K+</h3>
+				<h3 class="mb-0">2K+</h3>
 				<p class="text-muted small mb-0">{{ __('Products Curated') }}</p>
 			</div>
 			<div class="col-6 col-md-3 mb-4 mb-md-0">
-				<h3 class="mb-0">50+</h3>
+				<h3 class="mb-0">100+</h3>
 				<p class="text-muted small mb-0">{{ __('Brands Available') }}</p>
 			</div>
 			<div class="col-6 col-md-3 mb-0">
@@ -139,7 +210,7 @@
 	</div>
 </section>
 
-<section class="py-5">
+<section class="py-5 about-section">
 	<div class="container">
 		<div class="row align-items-center g-4">
 			<div class="col-lg-5 order-lg-2">
@@ -153,22 +224,22 @@
 				<p class="mb-1"><i class="ri-phone-line text-primary me-1"></i> {{ \App\Models\Setting::get('contact_phone', '+88 01648-022175') }}</p>
 				<p class="mb-3"><i class="ri-mail-line text-primary me-1"></i> {{ \App\Models\Setting::get('contact_email', 'sajidbeautybd@gmail.com') }}</p>
 				<p>{{ __('We welcome walk‑ins and consultations. Our team is trained to help match products to your specific skin, hair and lifestyle needs.') }}</p>
-				<a href="https://maps.google.com/?q=Shimanto+Shambar+Shopping+Mall+Dhaka" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">{{ __('Get Directions') }}</a>
+				<a href="https://maps.google.com/?q=Shimanto+Shambar+Shopping+Mall+Dhaka" target="_blank" rel="noopener" class="btn-custom-orange mt-2" style="font-size: 13px; padding: 8px 16px;">{{ __('Get Directions') }}</a>
 			</div>
 		</div>
 	</div>
 </section>
 
-<section class="py-5 bg-primary text-white">
+<section class="py-5 about-section" style="background-color: #f8f9fa;">
 	<div class="container">
 		<div class="row align-items-center g-3">
 			<div class="col-lg-8">
-				<h2 class="h4 mb-2">{{ __('Join Our Beauty Community') }}</h2>
-				<p class="mb-0">{{ __('Follow us for tips, launches & exclusive offers. Your journey to authentic beauty starts here.') }}</p>
+				<h2 class="h4 mb-2" style="color: #333;">{{ __('Join Our Beauty Community') }}</h2>
+				<p class="mb-0" style="color: #666;">{{ __('Follow us for tips, launches & exclusive offers. Your journey to authentic beauty starts here.') }}</p>
 			</div>
 			<div class="col-lg-4 text-lg-end">
-				<a href="{{ route('home.contactUs') }}" class="btn btn-light btn-sm me-2 mb-2">{{ __('Contact Support') }}</a>
-				<a href="{{ route('front.blog.index') }}" class="btn btn-outline-light btn-sm mb-2">{{ __('Read Our Blog') }}</a>
+				<a href="{{ route('home.contactUs') }}" style="background-color: #EC8951; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; margin-right: 0.5rem; margin-bottom: 0.5rem;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">{{ __('Contact Support') }}</a>
+				<a href="{{ route('front.blog.index') }}" style="background-color: #EC8951; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; margin-bottom: 0.5rem;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">{{ __('Read Our Blog') }}</a>
 			</div>
 		</div>
 	</div>

@@ -3,6 +3,84 @@
 @endphp
 @extends('front-end.layouts.app')
 @section('title', 'Home')
+
+@push('styles')
+<style>
+    /* Responsive Slider Styles */
+    .home-slider {
+        width: 100%;
+        overflow: hidden;
+    }
+    
+    .home-slider .home {
+        display: block;
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        background-color: #f8f8f8;
+    }
+    
+    .home-slider .bg-img {
+        width: 100%;
+        display: block;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Desktop - cover to fill width and maintain proper height */
+    @media (min-width: 1200px) {
+        /* .home-slider .home {
+            height: 500px;
+        } */
+        .home-slider .bg-img {
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+    }
+    
+    /* Tablet - adjust height */
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .home-slider .home {
+            height: 400px;
+        }
+        .home-slider .bg-img {
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+    }
+    
+    /* Mobile landscape */
+    @media (min-width: 576px) and (max-width: 767px) {
+        .home-slider .home {
+            height: auto;
+            min-height: 250px;
+        }
+        .home-slider .bg-img {
+            height: auto;
+            max-width: 100%;
+            object-fit: contain;
+            object-position: center;
+        }
+    }
+    
+    /* Mobile portrait - show full image */
+    @media (max-width: 575px) {
+        .home-slider .home {
+            height: auto;
+            min-height: 200px;
+        }
+        .home-slider .bg-img {
+            height: auto;
+            max-width: 100%;
+            object-fit: contain;
+            object-position: center;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
     <!-- Home slider -->
     <section class="p-0">
@@ -152,13 +230,15 @@
                                 </div>
 
                                 <!-- Buttons -->
-                                <div class="col-12 d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary" style="background-color: #EC8951;">
-                                        <i class="ri-filter-line me-1"></i> Apply Filters
-                                    </button>
-                                    <a href="{{ route('home') }}" class="btn btn-outline-secondary">
-                                        <i class="ri-refresh-line me-1"></i> Reset
-                                    </a>
+                                <div class="col-12">
+                                    <div style="display: flex; gap: 15px; align-items: center;">
+                                        <button type="submit" style="background-color: #EC8951; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">
+                                            <i class="ri-filter-line"></i> Apply Filters
+                                        </button>
+                                        <a href="{{ route('home') }}" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#5a6268'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#6c757d'; this.style.transform='translateY(0)';">
+                                            <i class="ri-refresh-line"></i> Reset
+                                        </a>
+                                    </div>
                                 </div>
                             </form>
                         </div>

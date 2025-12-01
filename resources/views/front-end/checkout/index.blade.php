@@ -174,7 +174,7 @@
             </div>
           </div>
 
-          <div class="col-12"><button id="place-order-btn" class="btn btn-primary">Place Order</button></div>
+          <div class="col-12"><button id="place-order-btn" style="background-color: #EC8951; color: white; border: none; padding: 12px 20px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; transition: all 0.3s ease; width: 100%;" onmouseover="this.style.backgroundColor='#d97438'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#EC8951'; this.style.transform='translateY(0)';">Place Order</button></div>
         </form>
       </div>
       <div class="col-lg-4">

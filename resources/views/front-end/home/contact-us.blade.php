@@ -1,5 +1,66 @@
 @extends('front-end.layouts.app')
 @section('title', 'Contact Us')
+@push('styles')
+<style>
+	.btn-contact-send {
+		background-color: #EC8951;
+		color: white;
+		border: none;
+		padding: 10px 25px;
+		border-radius: 4px;
+		font-weight: 600;
+		cursor: pointer;
+		font-size: 14px;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		text-decoration: none;
+		transition: all 0.3s ease;
+		white-space: nowrap;
+	}
+	.btn-contact-send:hover {
+		background-color: #d97438;
+		transform: translateY(-2px);
+		color: white;
+	}
+	.btn-contact-send:active {
+		transform: translateY(0);
+	}
+	@media (max-width: 768px) {
+		.contact-container {
+			padding: 1.5rem 0;
+		}
+		.contact-form h2 {
+			font-size: 1.25rem;
+		}
+		.contact-info h2 {
+			font-size: 1.25rem;
+		}
+		.btn-contact-send {
+			padding: 8px 15px;
+			font-size: 13px;
+			white-space: nowrap;
+		}
+	}
+	@media (max-width: 576px) {
+		.contact-container {
+			padding: 1rem 0;
+		}
+		.contact-form h2,
+		.contact-info h2 {
+			font-size: 1.1rem;
+		}
+		.contact-form {
+			padding: 1rem !important;
+		}
+		.btn-contact-send {
+			padding: 8px 12px;
+			font-size: 12px;
+			white-space: nowrap;
+		}
+	}
+</style>
+@endpush
 @section('content')
 <div class="py-4 border-bottom bg-light">
 	<div class="container">
@@ -14,7 +75,7 @@
 	</div>
 </div>
 
-<section class="py-5">
+<section class="py-5 contact-container">
 	<div class="container">
 		@if(session('contact_submitted'))
 			@if(session('contact_mail_sent'))
@@ -29,7 +90,7 @@
 		@endif
 		<div class="row g-4">
 			<div class="col-lg-7">
-				<div class="card shadow-sm">
+				<div class="card shadow-sm contact-form">
 					<div class="card-body p-4">
 						<h2 class="h5 mb-3">Send a Message</h2>
 						<form method="POST" action="{{ route('home.contact.submit') }}" novalidate>
@@ -60,7 +121,7 @@
 								@error('message')<div class="invalid-feedback">{{ $message }}</div>@enderror
 							</div>
 							<div class="d-flex align-items-center gap-3">
-								<button type="submit" class="btn btn-primary">Send Message</button>
+								<button type="submit" class="btn-contact-send"><i class="ri-send-plane-line"></i> Send Message</button>
 								<small class="text-muted">We reply within 24 hours.</small>
 							</div>
 						</form>
@@ -68,7 +129,7 @@
 				</div>
 			</div>
 			<div class="col-lg-5">
-				<div class="mb-4">
+				<div class="mb-4 contact-info">
 					<h2 class="h5">Store Information</h2>
 					<p class="mb-2"><i class="ri-map-pin-line text-primary me-1"></i> {{ \App\Models\Setting::get('contact_address', 'Shop No-95, Ground Floor, Shimanto Shambar Shopping Mall, Dhaka-1205.') }}</p>
 					<p class="mb-2"><i class="ri-phone-line text-primary me-1"></i> {{ \App\Models\Setting::get('contact_phone', '+88 01648-022175') }}</p>
