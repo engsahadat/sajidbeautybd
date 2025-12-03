@@ -30,7 +30,7 @@ class BkashService
         }
 
         try {
-            $tokenUrl = $this->baseUrl . 'tokenized/checkout/token/grant';
+            $tokenUrl = $this->baseUrl . 'checkout/token/grant';
             
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -79,7 +79,7 @@ class BkashService
         }
 
         try {
-            $createUrl = $this->baseUrl . 'tokenized/checkout/create';
+            $createUrl = $this->baseUrl . 'checkout/payment/create';
             
             // Build callback URL - use HTTPS for production/sandbox
             $callbackUrl = $this->config['callback_url'] . '?order_id=' . $order->id;
@@ -149,7 +149,7 @@ class BkashService
                 'Accept' => 'application/json',
                 'Authorization' => $token,
                 'X-APP-Key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'tokenized/checkout/execute', [
+            ])->post($this->baseUrl . 'checkout/payment/execute', [
                 'paymentID' => $paymentId,
             ]);
 
@@ -193,7 +193,7 @@ class BkashService
                 'Accept' => 'application/json',
                 'Authorization' => $token,
                 'X-APP-Key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'tokenized/checkout/payment/status', [
+            ])->post($this->baseUrl . 'checkout/payment/status', [
                 'paymentID' => $paymentId,
             ]);
 
