@@ -96,8 +96,8 @@ class BkashService
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-                'Authorization' => $token,
-                'X-APP-Key' => $this->config['app_key'],
+                'authorization' => $token,
+                'x-app-key' => $this->config['app_key'],
             ])->post($createUrl, $payload);
 
             $data = $response->json();
@@ -147,8 +147,8 @@ class BkashService
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-                'Authorization' => $token,
-                'X-APP-Key' => $this->config['app_key'],
+                'authorization' => $token,
+                'x-app-key' => $this->config['app_key'],
             ])->post($this->baseUrl . 'checkout/payment/execute', [
                 'paymentID' => $paymentId,
             ]);
@@ -191,8 +191,8 @@ class BkashService
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
-                'Authorization' => $token,
-                'X-APP-Key' => $this->config['app_key'],
+                'authorization' => $token,
+                'x-app-key' => $this->config['app_key'],
             ])->post($this->baseUrl . 'checkout/payment/status', [
                 'paymentID' => $paymentId,
             ]);
