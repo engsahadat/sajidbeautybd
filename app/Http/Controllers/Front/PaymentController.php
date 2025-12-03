@@ -21,6 +21,7 @@ class PaymentController extends Controller
     public function initiate(Request $request, string $gateway, Order $order)
     {
         $gateway = strtolower($gateway);
+        
         if (config('payment.demo', true)) {
             return $this->handleDemoPayment($order, $gateway);
         }

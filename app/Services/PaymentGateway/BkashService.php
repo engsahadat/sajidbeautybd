@@ -30,10 +30,14 @@ class BkashService
         }
 
         try {
+            $tokenUrl = $this->baseUrl . 'tokenized/checkout/token/grant';
+            
             $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
                 'username' => $this->config['username'],
                 'password' => $this->config['password'],
-            ])->post($this->baseUrl . '/checkout/token/grant', [
+            ])->post($tokenUrl, [
                 'app_key' => $this->config['app_key'],
                 'app_secret' => $this->config['app_secret'],
             ]);
@@ -45,10 +49,18 @@ class BkashService
                 return $data['id_token'];
             }
 
-            Log::error('bKash token grant failed', ['response' => $data]);
+            Log::error('bKash token grant failed', [
+                'url' => $tokenUrl,
+                'status' => $response->status(),
+                'response' => $data,
+                'username' => $this->config['username']
+            ]);
             return null;
         } catch (\Exception $e) {
-            Log::error('bKash token exception', ['error' => $e->getMessage()]);
+            Log::error('bKash token exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return null;
         }
     }
@@ -67,16 +79,26 @@ class BkashService
         }
 
         try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'X-APP-Key' => $this->config['app_key'],
-            ])->post($this->baseUrl . '/checkout/payment/create', [
-                'amount' => number_format((float)$order->total_amount, 2, '.', ''),
+            $createUrl = $this->baseUrl . 'tokenized/checkout/create';
+            
+            // Build callback URL - use HTTPS for production/sandbox
+            $callbackUrl = $this->config['callback_url'] . '?order_id=' . $order->id;
+            
+            $payload = [
+                'mode' => '0011',
+                'callbackURL' => $callbackUrl,
+                'amount' => (string) number_format((float)$order->total_amount, 2, '.', ''),
                 'currency' => 'BDT',
                 'intent' => 'sale',
                 'merchantInvoiceNumber' => $order->order_number,
-                'callbackURL' => $this->config['callback_url'] . '?order_id=' . $order->id,
-            ]);
+            ];
+            
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'Authorization' => $token,
+                'X-APP-Key' => $this->config['app_key'],
+            ])->post($createUrl, $payload);
 
             $data = $response->json();
 
@@ -88,13 +110,22 @@ class BkashService
                 ];
             }
 
-            Log::error('bKash payment creation failed', ['response' => $data]);
+            Log::error('bKash payment creation failed', [
+                'url' => $createUrl,
+                'status' => $response->status(),
+                'request_payload' => $payload,
+                'response' => $data,
+                'callback_url' => $this->config['callback_url']
+            ]);
             return [
                 'success' => false,
-                'message' => $data['errorMessage'] ?? 'Payment creation failed',
+                'message' => $data['errorMessage'] ?? ($data['statusMessage'] ?? 'Payment creation failed'),
             ];
         } catch (\Exception $e) {
-            Log::error('bKash payment exception', ['error' => $e->getMessage()]);
+            Log::error('bKash payment exception', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return [
                 'success' => false,
                 'message' => 'Payment gateway error: ' . $e->getMessage(),
@@ -114,9 +145,11 @@ class BkashService
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'Authorization' => $token,
                 'X-APP-Key' => $this->config['app_key'],
-            ])->post($this->baseUrl . '/checkout/payment/execute', [
+            ])->post($this->baseUrl . 'tokenized/checkout/execute', [
                 'paymentID' => $paymentId,
             ]);
 
@@ -133,7 +166,7 @@ class BkashService
 
             return [
                 'success' => false,
-                'message' => $data['errorMessage'] ?? 'Payment execution failed',
+                'message' => $data['errorMessage'] ?? ($data['statusMessage'] ?? 'Payment execution failed'),
             ];
         } catch (\Exception $e) {
             Log::error('bKash execute exception', ['error' => $e->getMessage()]);
@@ -156,9 +189,11 @@ class BkashService
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'Authorization' => $token,
                 'X-APP-Key' => $this->config['app_key'],
-            ])->post($this->baseUrl . '/checkout/payment/query', [
+            ])->post($this->baseUrl . 'tokenized/checkout/payment/status', [
                 'paymentID' => $paymentId,
             ]);
 

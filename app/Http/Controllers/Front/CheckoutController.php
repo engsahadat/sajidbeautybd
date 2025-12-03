@@ -21,7 +21,7 @@ class CheckoutController extends Controller
     {
         $cart = ShoppingCart::forCurrent()->with('items.product')->first();
         if (!$cart || $cart->items->isEmpty()) {
-            return redirect()->route('cart.index')->with('error','Your cart is empty.');
+            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
         return view('front-end.checkout.index', ['cart' => $cart]);
     }
@@ -36,10 +36,10 @@ class CheckoutController extends Controller
                     'message' => 'Your cart is empty.'
                 ], 400);
             }
-            return redirect()->route('cart.index')->with('error','Your cart is empty.');
+            return redirect()->route('cart.index')->with('error', 'Your cart is empty.');
         }
 
-    $data = $request->validate([
+        $data = $request->validate([
             // Billing
             'billing_first_name' => 'required|string|max:50',
             'billing_last_name' => 'required|string|max:50',
@@ -62,19 +62,17 @@ class CheckoutController extends Controller
             'payment_method' => 'required|in:cod,manual,sslcommerz,bkash',
         ]);
 
-    $order = DB::transaction(function() use ($cart, $data) {
-        $orderNumber = 'ORD-'.date('ymd').'-'.Str::upper(Str::random(6));
-        $subtotal = $cart->subtotal();
-        $tax = 0.00;
-        
-        // Calculate delivery charge based on location
-        $shipping = 0.00;
-        if (isset($data['delivery_location'])) {
-            $shipping = $data['delivery_location'] === 'inside_dhaka' ? 60.00 : 120.00;
-        }
-        
-        $discount = $cart->discount();
-        $total = $subtotal - $discount + $shipping + $tax;
+        $order = DB::transaction(function () use ($cart, $data) {
+            $orderNumber = 'ORD-' . date('ymd') . '-' . Str::upper(Str::random(6));
+            $subtotal = $cart->subtotal();
+            $tax = 0.00;
+            $shipping = 0.00;
+            if (isset($data['delivery_location'])) {
+                $shipping = $data['delivery_location'] === 'inside_dhaka' ? 60.00 : 120.00;
+            }
+
+            $discount = $cart->discount();
+            $total = $subtotal - $discount + $shipping + $tax;
 
             $order = Order::create(array_merge($data, [
                 'order_number' => $orderNumber,
@@ -103,8 +101,6 @@ class CheckoutController extends Controller
                     'unit_price' => $unit,
                     'total_price' => number_format($unit * $qty, 2, '.', ''),
                 ]);
-                
-                // Reduce stock for variant or product
                 if ($ci->variant_id && $ci->variant) {
                     $ci->variant->decrement('stock_quantity', $qty);
                 } elseif ($ci->product && $ci->product->manage_stock) {
@@ -113,9 +109,10 @@ class CheckoutController extends Controller
             }
             return $order;
         });
-
-        // Branch by payment method
+        
         $method = $data['payment_method'] ?? 'cod';
+        $redirect = null;
+        
         if ($method === 'cod') {
             // For COD, keep payment status as pending - will be marked as paid on delivery
             Payment::create([
@@ -128,22 +125,22 @@ class CheckoutController extends Controller
                 'status' => 'pending',
                 'processed_at' => null,
             ]);
-            // Don't refresh payment status for COD - keep it as pending
             if ($cart->coupon) {
-                 try { 
-                    $cart->coupon->increment('used_count'); 
+                try {
+                    $cart->coupon->increment('used_count');
                 } catch (\Throwable $e) {
-
-                } 
+                }
             }
             $cart->items()->delete();
             $this->sendOrderNotifications($order);
             $redirect = route('checkout.success', $order->order_number);
-        } elseif (in_array($method, ['sslcommerz','bkash'])) {
+        } elseif (in_array($method, ['sslcommerz', 'bkash'])) {
             $redirect = URL::temporarySignedRoute('payment.initiate', now()->addMinutes(15), [
-                'order' => $order->id,
                 'gateway' => $method,
+                'order' => $order->id,
             ]);
+        } else {
+            return back()->with('error', 'Invalid payment method selected.');
         }
 
         if ($request->expectsJson()) {
@@ -157,7 +154,7 @@ class CheckoutController extends Controller
         $order = Order::where('order_number', $orderNumber)->with('items')->firstOrFail();
         return view('front-end.checkout.success', compact('order'));
     }
-    
+
     /**
      * Send order notifications via email and SMS
      * 
@@ -178,7 +175,7 @@ class CheckoutController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
-        
+
         // 2. Send email to shop owner
         try {
             $brevoMail->sendOrderNotificationToShop($order);
@@ -189,7 +186,7 @@ class CheckoutController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
-        
+
         // 3. Send SMS to customer
         try {
             $customerPhone = $order->billing_phone ?? $order->shipping_phone;
