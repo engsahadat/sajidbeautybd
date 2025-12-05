@@ -25,6 +25,6 @@ return [
         'base_url' => env('BKASH_BASE_URL') ?: (env('BKASH_SANDBOX', true) 
             ? 'https://tokenized.sandbox.bka.sh/v1.2.0-beta/' 
             : 'https://tokenized.pay.bka.sh/v1.2.0-beta/'),
-        'callback_url' => rtrim(env('APP_URL'), '/') . '/payment/callback/bkash',
+        'callback_url' => env('BKASH_CALLBACK_URL') ?: rtrim(env('APP_URL'), '/') . '/payment/callback/bkash',
     ],
 ];

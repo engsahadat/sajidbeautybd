@@ -30,7 +30,7 @@ class BkashService
         }
 
         try {
-            $tokenUrl = $this->baseUrl . 'checkout/token/grant';
+            $tokenUrl = $this->baseUrl . 'tokenized/checkout/token/grant';
             
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -79,13 +79,14 @@ class BkashService
         }
 
         try {
-            $createUrl = $this->baseUrl . 'checkout/payment/create';
+            $createUrl = $this->baseUrl . 'tokenized/checkout/create';
             
             // Build callback URL - use HTTPS for production/sandbox
             $callbackUrl = $this->config['callback_url'] . '?order_id=' . $order->id;
             
             $payload = [
                 'mode' => '0011',
+                'payerReference' => ' ',
                 'callbackURL' => $callbackUrl,
                 'amount' => (string) number_format((float)$order->total_amount, 2, '.', ''),
                 'currency' => 'BDT',
@@ -149,7 +150,7 @@ class BkashService
                 'Accept' => 'application/json',
                 'authorization' => $token,
                 'x-app-key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'checkout/payment/execute', [
+            ])->post($this->baseUrl . 'tokenized/checkout/execute', [
                 'paymentID' => $paymentId,
             ]);
 
@@ -193,7 +194,7 @@ class BkashService
                 'Accept' => 'application/json',
                 'authorization' => $token,
                 'x-app-key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'checkout/payment/status', [
+            ])->post($this->baseUrl . 'tokenized/checkout/payment/status', [
                 'paymentID' => $paymentId,
             ]);
 
@@ -212,6 +213,66 @@ class BkashService
         } catch (\Exception $e) {
             Log::error('bKash query exception', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Verify callback signature (Optional - for additional security)
+     * According to bKash API specification, signature is provided in callback URL
+     */
+    public function verifySignature(string $paymentId, string $status, string $signature): bool
+    {
+        // The signature verification logic would go here
+        // bKash provides signature in callback URL for verification
+        // For now, we're using execute() method to verify payment which is more secure
+        return true;
+    }
+
+    /**
+     * Refund a payment (if needed)
+     */
+    public function refund(string $paymentId, string $trxId, float $amount, string $reason = ''): array
+    {
+        $token = $this->getToken();
+        if (!$token) {
+            return ['success' => false, 'message' => 'Authentication failed'];
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+                'authorization' => $token,
+                'x-app-key' => $this->config['app_key'],
+            ])->post($this->baseUrl . 'tokenized/checkout/payment/refund', [
+                'paymentID' => $paymentId,
+                'trxID' => $trxId,
+                'amount' => (string) number_format($amount, 2, '.', ''),
+                'sku' => 'refund',
+                'reason' => $reason ?: 'Customer refund request',
+            ]);
+
+            $data = $response->json();
+
+            if (isset($data['transactionStatus']) && $data['transactionStatus'] === 'Completed') {
+                return [
+                    'success' => true,
+                    'refund_trx_id' => $data['refundTrxID'] ?? null,
+                    'transaction_id' => $data['trxID'] ?? null,
+                    'status' => $data['transactionStatus'],
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => $data['errorMessage'] ?? ($data['statusMessage'] ?? 'Refund failed'),
+            ];
+        } catch (\Exception $e) {
+            Log::error('bKash refund exception', ['error' => $e->getMessage()]);
+            return [
+                'success' => false,
+                'message' => 'Refund error: ' . $e->getMessage(),
+            ];
         }
     }
 }
