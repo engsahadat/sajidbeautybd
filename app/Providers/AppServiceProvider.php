@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Notifications\ChannelManager;
+use App\Channels\BrevoChannel;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Register custom Brevo notification channel
+        $this->app->make(ChannelManager::class)->extend('brevo', function ($app) {
+            return new BrevoChannel();
+        });
+
         Paginator::useBootstrap();
         View::composer(['front-end.components.header','front-end.components.footer'], function ($view) {
             $categories = Cache::remember('layout_categories', now()->addMinutes(30), function () {

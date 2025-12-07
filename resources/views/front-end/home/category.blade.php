@@ -143,6 +143,19 @@
 					</div>
 				@endforeach
 			</div>
+			
+			<!-- Pagination -->
+			@if($products->hasPages())
+				<div class="row mt-4">
+					<div class="col-12">
+						<nav aria-label="Product pagination">
+							<div class="pagination-wrapper text-center">
+								{{ $products->appends(request()->query())->links('pagination.custom') }}
+							</div>
+						</nav>
+					</div>
+				</div>
+			@endif
 		@endif
 	</div>
 </section>

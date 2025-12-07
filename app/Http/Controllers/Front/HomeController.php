@@ -79,7 +79,7 @@ class HomeController extends Controller
                 break;
         }
 
-        $products = $productsQuery->paginate(50)->withQueryString();
+        $products = $productsQuery->paginate(52)->withQueryString();
         
         $blogs = Blog::with('author')
             ->active()
@@ -124,7 +124,7 @@ class HomeController extends Controller
             });
         }
 
-        $categories = $query->orderBy('sort_order', 'asc')->paginate(12)->withQueryString();
+        $categories = $query->orderBy('sort_order', 'asc')->paginate(52)->withQueryString();
         return view('front-end.home.all-category', compact('categories'));
     }
     public function allProducts(Request $request){
@@ -169,7 +169,7 @@ class HomeController extends Controller
                 break;
         }
 
-        $products = $query->paginate(50)->withQueryString();
+        $products = $query->paginate(52)->withQueryString();
         
         return view('front-end.home.all-products', compact('products'));
     }
@@ -189,7 +189,7 @@ class HomeController extends Controller
             });
         }
 
-        $products = $query->orderBy('sort_order', 'asc')->get();
+        $products = $query->orderBy('sort_order', 'asc')->paginate(52)->withQueryString();
         return view('front-end.home.category', compact('products', 'category'));
     }
     public function allBrand(Request $request){
@@ -206,7 +206,7 @@ class HomeController extends Controller
             });
         }
 
-        $brands = $query->orderBy('sort_order', 'asc')->paginate(12)->withQueryString();
+        $brands = $query->orderBy('sort_order', 'asc')->paginate(52)->withQueryString();
         return view('front-end.home.all-brand', compact('brands'));
     }
     public function brand($id, Request $request){
@@ -225,7 +225,7 @@ class HomeController extends Controller
             });
         }
 
-        $products = $query->orderBy('sort_order', 'asc')->get();
+        $products = $query->orderBy('sort_order', 'asc')->paginate(52)->withQueryString();
         return view('front-end.home.brand', compact('products', 'brand'));
     }
 

@@ -202,4 +202,64 @@ class BrevoMailService
             return false;
         }
     }
+
+    /**
+     * Send password reset email
+     *
+     * @param string $email
+     * @param string $name
+     * @param string $resetUrl
+     * @return bool
+     */
+    public function sendPasswordResetEmail(string $email, string $name, string $resetUrl): bool
+    {
+        $subject = 'Reset Your Password - Sajid Beauty BD';
+        
+        $htmlContent = '
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reset Password</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
+                <h2 style="color: #d63384; margin-bottom: 20px;">Reset Your Password</h2>
+                
+                <p>Hello ' . htmlspecialchars($name) . ',</p>
+                
+                <p>You are receiving this email because we received a password reset request for your account.</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="' . $resetUrl . '" 
+                       style="display: inline-block; background-color: #d63384; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                        Reset Password
+                    </a>
+                </div>
+                
+                <p>This password reset link will expire in 60 minutes.</p>
+                
+                <p>If you did not request a password reset, no further action is required.</p>
+                
+                <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+                
+                <p style="font-size: 12px; color: #666;">
+                    If you\'re having trouble clicking the "Reset Password" button, copy and paste the URL below into your web browser:
+                </p>
+                <p style="font-size: 12px; color: #666; word-break: break-all;">
+                    ' . htmlspecialchars($resetUrl) . '
+                </p>
+                
+                <p style="margin-top: 30px; font-size: 14px; color: #666;">
+                    Best regards,<br>
+                    <strong>Sajid Beauty BD</strong>
+                </p>
+            </div>
+        </body>
+        </html>
+        ';
+        
+        return $this->sendEmail($email, $name, $subject, $htmlContent);
+    }
 }

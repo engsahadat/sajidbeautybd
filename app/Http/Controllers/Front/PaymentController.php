@@ -71,6 +71,18 @@ class PaymentController extends Controller
         $gateway = strtolower($gateway);
         $orderId = $request->input('order_id');
         $order = Order::find($orderId);
+
+        // Handle missing order
+        if (!$order) {
+            Log::error('Payment callback - Order not found', [
+                'gateway' => $gateway,
+                'order_id' => $orderId,
+                'request' => $request->all(),
+            ]);
+            return redirect()->route('checkout.show')
+                ->with('error', 'Order not found. Please try again.');
+        }
+
         try {
             $verified = false;
             $transactionId = null;
@@ -90,12 +102,40 @@ class PaymentController extends Controller
                     $paymentId = $request->input('paymentID');
                     $status = $request->input('status');
                     
+                    // Handle failure and cancel statuses
+                    if ($status === 'failure') {
+                        Log::warning('bKash payment failed', [
+                            'order_id' => $order->id,
+                            'payment_id' => $paymentId,
+                            'request' => $request->all(),
+                        ]);
+                        return redirect()->route('checkout.show')
+                            ->with('error', 'Payment failed. Please try again or choose another payment method.');
+                    }
+                    
+                    if ($status === 'cancel') {
+                        Log::info('bKash payment cancelled by user', [
+                            'order_id' => $order->id,
+                            'payment_id' => $paymentId,
+                        ]);
+                        return redirect()->route('checkout.show')
+                            ->with('warning', 'Payment was cancelled. You can try again.');
+                    }
+                    
                     if ($paymentId && $status === 'success') {
                         $execution = app(BkashService::class)->execute($paymentId);
                         if ($execution['success']) {
                             $verified = true;
                             $transactionId = $execution['transaction_id'];
                             $amount = $execution['amount'];
+                        } else {
+                            Log::error('bKash payment execution failed', [
+                                'order_id' => $order->id,
+                                'payment_id' => $paymentId,
+                                'execution_result' => $execution,
+                            ]);
+                            return redirect()->route('checkout.show')
+                                ->with('error', 'Payment verification failed. Please contact support.');
                         }
                     }
                     break;

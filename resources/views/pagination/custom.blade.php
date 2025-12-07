@@ -38,41 +38,53 @@
 @endif
 
 <style>
-.theme-pagination .pagination {
+.theme-pagination {
     margin: 2rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.theme-pagination .pagination {
+    margin: 0;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.theme-pagination .page-item {
+    margin: 2px;
 }
 
 .theme-pagination .page-link {
     color: #ec8951;
     background-color: #fff;
     border: 1px solid #dee2e6;
-    padding: 0.5rem 0.75rem;
-    margin: 0 0.125rem;
+    padding: 0;
     border-radius: 0.25rem;
     text-decoration: none;
     transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 38px;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .theme-pagination .page-link:hover {
     color: #fff;
     background-color: #ec8951;
     border-color: #ec8951;
-}
-
-/* Keep a consistent box for icon-only controls, including empty disabled placeholders */
-.theme-pagination .page-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 36px;
-    min-height: 36px;
-    padding: 0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(236, 137, 81, 0.3);
 }
 
 .theme-pagination .page-item.active .page-link {
     color: #fff;
     background-color: #ec8951;
     border-color: #ec8951;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(236, 137, 81, 0.4);
 }
 
 .theme-pagination .page-item.disabled .page-link {
@@ -80,11 +92,27 @@
     background-color: #fff;
     border-color: #dee2e6;
     cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .theme-pagination .page-item.disabled .page-link:hover {
     color: #6c757d;
     background-color: #fff;
     border-color: #dee2e6;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .theme-pagination .page-link {
+        min-width: 34px;
+        min-height: 34px;
+        font-size: 13px;
+    }
+    
+    .theme-pagination .pagination {
+        justify-content: center;
+    }
 }
 </style>
