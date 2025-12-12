@@ -26,5 +26,6 @@ return [
             ? 'https://tokenized.sandbox.bka.sh/v1.2.0-beta/' 
             : 'https://tokenized.pay.bka.sh/v1.2.0-beta/'),
         'callback_url' => env('BKASH_CALLBACK_URL') ?: rtrim(env('APP_URL'), '/') . '/payment/callback/bkash',
+        'timeout' => env('BKASH_TIMEOUT', 30),
     ],
 ];

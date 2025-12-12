@@ -3,7 +3,7 @@
         <div class="main-header-left d-lg-none w-auto">
             <div class="logo-wrapper">
                 <a href="{{ route('home') }}">
-                    <img class="blur-up lazyloaded d-block d-lg-none" src="{{ asset('images/logo-white.svg') }}" alt="">
+                    <img class="blur-up lazyloaded d-block d-lg-none" src="{{ asset('images/flogo.png') }}" alt="">
                 </a>
             </div>
         </div>

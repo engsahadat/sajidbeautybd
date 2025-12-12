@@ -152,7 +152,7 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>
-                                            <a href="{{ route('admin.products.edit', $product->id) }}" class="text-decoration-none">
+                                            <a href="{{ route('products.edit', $product->id) }}" class="text-decoration-none">
                                                 {{ $product->name }}
                                             </a>
                                         </td>
@@ -215,7 +215,7 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td>
-                                            <a href="{{ route('admin.products.edit', $variant->product_id) }}" class="text-decoration-none">
+                                            <a href="{{ route('products.edit', $variant->product_id) }}" class="text-decoration-none">
                                                 {{ $variant->product_name }}
                                             </a>
                                         </td>

@@ -3,7 +3,7 @@
         <div class="logo-wrapper">
             <a href="{{ route('admin.dashboard') }}">
                 <img class="d-none d-lg-block blur-up lazyloaded"
-                    src="{{ asset('images/logo-white.svg') }}" alt="">
+                    src="{{ asset('images/flogo.png') }}" alt="">
             </a>
         </div>
     </div>

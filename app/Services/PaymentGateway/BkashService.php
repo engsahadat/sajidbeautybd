@@ -32,15 +32,16 @@ class BkashService
         try {
             $tokenUrl = $this->baseUrl . 'tokenized/checkout/token/grant';
             
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'username' => $this->config['username'],
-                'password' => $this->config['password'],
-            ])->post($tokenUrl, [
-                'app_key' => $this->config['app_key'],
-                'app_secret' => $this->config['app_secret'],
-            ]);
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'username' => $this->config['username'],
+                    'password' => $this->config['password'],
+                ])->post($tokenUrl, [
+                    'app_key' => $this->config['app_key'],
+                    'app_secret' => $this->config['app_secret'],
+                ]);
 
             $data = $response->json();
 
@@ -94,12 +95,13 @@ class BkashService
                 'merchantInvoiceNumber' => $order->order_number,
             ];
             
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'authorization' => $token,
-                'x-app-key' => $this->config['app_key'],
-            ])->post($createUrl, $payload);
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'authorization' => $token,
+                    'x-app-key' => $this->config['app_key'],
+                ])->post($createUrl, $payload);
 
             $data = $response->json();
 
@@ -145,14 +147,15 @@ class BkashService
         }
 
         try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'authorization' => $token,
-                'x-app-key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'tokenized/checkout/execute', [
-                'paymentID' => $paymentId,
-            ]);
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'authorization' => $token,
+                    'x-app-key' => $this->config['app_key'],
+                ])->post($this->baseUrl . 'tokenized/checkout/execute', [
+                    'paymentID' => $paymentId,
+                ]);
 
             $data = $response->json();
 
@@ -189,14 +192,15 @@ class BkashService
         }
 
         try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'authorization' => $token,
-                'x-app-key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'tokenized/checkout/payment/status', [
-                'paymentID' => $paymentId,
-            ]);
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'authorization' => $token,
+                    'x-app-key' => $this->config['app_key'],
+                ])->post($this->baseUrl . 'tokenized/checkout/payment/status', [
+                    'paymentID' => $paymentId,
+                ]);
 
             $data = $response->json();
 
@@ -212,6 +216,95 @@ class BkashService
             return ['success' => false, 'message' => 'Query failed'];
         } catch (\Exception $e) {
             Log::error('bKash query exception', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Search transaction by trxID
+     */
+    public function searchTransaction(string $trxId): array
+    {
+        $token = $this->getToken();
+        if (!$token) {
+            return ['success' => false, 'message' => 'Authentication failed'];
+        }
+
+        try {
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'authorization' => $token,
+                    'x-app-key' => $this->config['app_key'],
+                ])->post($this->baseUrl . 'tokenized/checkout/general/searchTransaction', [
+                    'trxID' => $trxId,
+                ]);
+
+            $data = $response->json();
+
+            if (isset($data['transactionStatus'])) {
+                return [
+                    'success' => true,
+                    'status' => $data['transactionStatus'],
+                    'transaction_id' => $data['trxID'] ?? null,
+                    'payment_id' => $data['paymentID'] ?? null,
+                    'amount' => $data['amount'] ?? 0,
+                    'initiationTime' => $data['initiationTime'] ?? null,
+                    'completedTime' => $data['completedTime'] ?? null,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => $data['errorMessage'] ?? ($data['statusMessage'] ?? 'Transaction search failed'),
+            ];
+        } catch (\Exception $e) {
+            Log::error('bKash search transaction exception', ['error' => $e->getMessage()]);
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Query refund status
+     */
+    public function queryRefund(string $paymentId, string $trxId): array
+    {
+        $token = $this->getToken();
+        if (!$token) {
+            return ['success' => false, 'message' => 'Authentication failed'];
+        }
+
+        try {
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'authorization' => $token,
+                    'x-app-key' => $this->config['app_key'],
+                ])->post($this->baseUrl . 'tokenized/checkout/payment/refund', [
+                    'paymentID' => $paymentId,
+                    'trxID' => $trxId,
+                ]);
+
+            $data = $response->json();
+
+            if (isset($data['transactionStatus'])) {
+                return [
+                    'success' => true,
+                    'status' => $data['transactionStatus'],
+                    'refund_trx_id' => $data['refundTrxID'] ?? null,
+                    'transaction_id' => $data['trxID'] ?? null,
+                    'amount' => $data['amount'] ?? 0,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => $data['errorMessage'] ?? ($data['statusMessage'] ?? 'Refund query failed'),
+            ];
+        } catch (\Exception $e) {
+            Log::error('bKash query refund exception', ['error' => $e->getMessage()]);
             return ['success' => false, 'message' => $e->getMessage()];
         }
     }
@@ -239,18 +332,19 @@ class BkashService
         }
 
         try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-                'authorization' => $token,
-                'x-app-key' => $this->config['app_key'],
-            ])->post($this->baseUrl . 'tokenized/checkout/payment/refund', [
-                'paymentID' => $paymentId,
-                'trxID' => $trxId,
-                'amount' => (string) number_format($amount, 2, '.', ''),
-                'sku' => 'refund',
-                'reason' => $reason ?: 'Customer refund request',
-            ]);
+            $response = Http::timeout($this->config['timeout'] ?? 30)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'authorization' => $token,
+                    'x-app-key' => $this->config['app_key'],
+                ])->post($this->baseUrl . 'tokenized/checkout/payment/refund', [
+                    'paymentID' => $paymentId,
+                    'trxID' => $trxId,
+                    'amount' => (string) number_format($amount, 2, '.', ''),
+                    'sku' => 'refund',
+                    'reason' => $reason ?: 'Customer refund request',
+                ]);
 
             $data = $response->json();
 
