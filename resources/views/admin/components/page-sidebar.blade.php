@@ -97,6 +97,11 @@
                             <i class="fa fa-circle"></i>Transactions
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('admin.payments.bkash.tools') }}">
+                            <i class="fa fa-circle"></i>bKash Tools
+                        </a>
+                    </li>
                 </ul>
             </li>
 

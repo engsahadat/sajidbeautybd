@@ -107,7 +107,19 @@ Route::prefix('admin')->group(function () {
             Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
             Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
             Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+            
+            // bKash specific payment actions
+            Route::post('bkash/refund', [PaymentController::class, 'processBkashRefund'])->name('admin.bkash.refund');
+            Route::get('bkash/refund-status', [PaymentController::class, 'checkBkashRefundStatus'])->name('admin.bkash.refund-status');
         });
+        
+        // bKash payment verification & search routes (not order-specific)
+        Route::prefix('payments/bkash')->name('admin.payments.bkash.')->group(function () {
+            Route::get('tools', [PaymentController::class, 'bkashTools'])->name('tools');
+            Route::post('verify', [PaymentController::class, 'verifyBkashPayment'])->name('verify');
+            Route::post('search', [PaymentController::class, 'searchBkashTransaction'])->name('search');
+        });
+        
         Route::get('transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
         // Settings

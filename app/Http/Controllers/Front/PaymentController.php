@@ -106,20 +106,24 @@ class PaymentController extends Controller
                     if ($status === 'failure') {
                         Log::warning('bKash payment failed', [
                             'order_id' => $order->id,
+                            'order_number' => $order->order_number,
                             'payment_id' => $paymentId,
                             'request' => $request->all(),
+                            'timestamp' => now()->toIso8601String(),
                         ]);
                         return redirect()->route('checkout.show')
-                            ->with('error', 'Payment failed. Please try again or choose another payment method.');
+                            ->with('error', 'Payment Failed. Your transaction could not be completed. Please try again or choose another payment method.');
                     }
                     
                     if ($status === 'cancel') {
                         Log::info('bKash payment cancelled by user', [
                             'order_id' => $order->id,
+                            'order_number' => $order->order_number,
                             'payment_id' => $paymentId,
+                            'timestamp' => now()->toIso8601String(),
                         ]);
                         return redirect()->route('checkout.show')
-                            ->with('warning', 'Payment was cancelled. You can try again.');
+                            ->with('warning', 'Payment Cancelled. You cancelled the payment. You can try again when ready.');
                     }
                     
                     if ($paymentId && $status === 'success') {
@@ -128,14 +132,19 @@ class PaymentController extends Controller
                             $verified = true;
                             $transactionId = $execution['transaction_id'];
                             $amount = $execution['amount'];
+                            // Store full execution response for later reference
+                            $gatewayResponse = $execution;
                         } else {
+                            $errorMessage = $execution['message'] ?? 'Payment verification failed. Please contact support.';
                             Log::error('bKash payment execution failed', [
                                 'order_id' => $order->id,
+                                'order_number' => $order->order_number,
                                 'payment_id' => $paymentId,
                                 'execution_result' => $execution,
+                                'timestamp' => now()->toIso8601String(),
                             ]);
                             return redirect()->route('checkout.show')
-                                ->with('error', 'Payment verification failed. Please contact support.');
+                                ->with('error', $errorMessage);
                         }
                     }
                     break;
@@ -153,7 +162,7 @@ class PaymentController extends Controller
                         'amount' => $amount ?? $order->total_amount,
                         'currency' => $order->currency ?? 'BDT',
                         'status' => 'completed',
-                        'gateway_response' => json_encode($request->all()),
+                        'gateway_response' => json_encode($gatewayResponse ?? $request->all()),
                         'processed_at' => now(),
                     ]
                 );
