@@ -25,6 +25,7 @@ class BkashService
      */
     protected function getToken(): ?string
     {
+        
         $cacheKey = 'bkash_token';
         
         // Return cached token if available
@@ -47,7 +48,6 @@ class BkashService
                 ]);
 
             $data = $response->json();
-           
             // Check for successful response with id_token
             if (isset($data['statusCode']) && $data['statusCode'] === '0000' && isset($data['id_token'])) {
                 // Cache token for the time specified in expires_in (default 3600 seconds = 1 hour)

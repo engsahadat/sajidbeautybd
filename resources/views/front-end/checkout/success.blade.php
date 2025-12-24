@@ -114,4 +114,19 @@
     </div>
   </div>
 </section>
+
+@push('script')
+<script>
+  // Prevent back navigation to payment callback page
+  if (window.history && window.history.pushState) {
+    // Replace current history entry to prevent going back to payment page
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', function() {
+      // Push state again to prevent back navigation
+      window.history.pushState(null, '', window.location.href);
+    });
+  }
+</script>
+@endpush
+
 @endsection

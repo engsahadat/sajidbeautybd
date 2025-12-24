@@ -127,14 +127,124 @@ class PaymentController extends Controller
                     }
                     
                     if ($paymentId && $status === 'success') {
+                        // PROTECTION LAYER 1: Check if payment already exists and is completed
+                        $existingPayment = Payment::where('order_id', $order->id)
+                            ->where('gateway', 'bkash')
+                            ->where('status', 'completed')
+                            ->first();
+                        
+                        if ($existingPayment) {
+                            Log::info('bKash payment already completed - skipping execute API', [
+                                'order_id' => $order->id,
+                                'order_number' => $order->order_number,
+                                'payment_id' => $paymentId,
+                                'existing_transaction_id' => $existingPayment->transaction_id,
+                                'timestamp' => now()->toIso8601String(),
+                            ]);
+                            
+                            return redirect()->route('checkout.success', $order->order_number)
+                                ->with('success', 'Payment completed successfully!');
+                        }
+                        
+                        // PROTECTION LAYER 2: Database lock to prevent race conditions
+                        // Use updateOrCreate with additional check to create a processing lock
+                        try {
+                            \DB::beginTransaction();
+                            
+                            // Try to get or create payment record with lock
+                            $payment = Payment::lockForUpdate()
+                                ->where('order_id', $order->id)
+                                ->where('gateway', 'bkash')
+                                ->first();
+                            
+                            // If payment exists and is completed, another request already processed it
+                            if ($payment && $payment->status === 'completed') {
+                                \DB::rollBack();
+                                Log::info('bKash payment already completed (found during lock check)', [
+                                    'order_id' => $order->id,
+                                    'payment_id' => $paymentId,
+                                    'transaction_id' => $payment->transaction_id,
+                                    'timestamp' => now()->toIso8601String(),
+                                ]);
+                                
+                                return redirect()->route('checkout.success', $order->order_number)
+                                    ->with('success', 'Payment completed successfully!');
+                            }
+                            
+                            // If payment exists and is processing, another request is handling it
+                            if ($payment && $payment->status === 'processing') {
+                                \DB::rollBack();
+                                Log::info('bKash payment already being processed by another request', [
+                                    'order_id' => $order->id,
+                                    'payment_id' => $paymentId,
+                                    'timestamp' => now()->toIso8601String(),
+                                ]);
+                                
+                                return redirect()->route('checkout.success', $order->order_number)
+                                    ->with('success', 'Your payment is being processed. Please wait...');
+                            }
+                            
+                            // Mark payment as processing to block concurrent requests
+                            if ($payment) {
+                                $payment->update(['status' => 'processing']);
+                            } else {
+                                $payment = Payment::create([
+                                    'order_id' => $order->id,
+                                    'payment_method' => 'BKASH',
+                                    'gateway' => 'bkash',
+                                    'transaction_id' => $paymentId,
+                                    'amount' => $order->total_amount,
+                                    'currency' => $order->currency ?? 'BDT',
+                                    'status' => 'processing',
+                                ]);
+                            }
+                            
+                            \DB::commit();
+                            
+                            Log::info('bKash payment marked as processing - proceeding to execute', [
+                                'order_id' => $order->id,
+                                'payment_id' => $paymentId,
+                                'timestamp' => now()->toIso8601String(),
+                            ]);
+                            
+                        } catch (\Exception $e) {
+                            \DB::rollBack();
+                            Log::error('Failed to acquire payment lock', [
+                                'order_id' => $order->id,
+                                'payment_id' => $paymentId,
+                                'error' => $e->getMessage(),
+                            ]);
+                            
+                            return redirect()->route('checkout.show')
+                                ->with('error', 'Payment processing error. Please try again.');
+                        }
+                        
+                        // PROTECTION LAYER 3: Execute payment with bKash API
                         $execution = app(BkashService::class)->execute($paymentId);
+                        
                         if ($execution['success']) {
                             $verified = true;
                             $transactionId = $execution['transaction_id'];
                             $amount = $execution['amount'];
-                            // Store full execution response for later reference
                             $gatewayResponse = $execution;
+                            
+                            Log::info('bKash payment executed successfully', [
+                                'order_id' => $order->id,
+                                'payment_id' => $paymentId,
+                                'transaction_id' => $transactionId,
+                                'timestamp' => now()->toIso8601String(),
+                            ]);
                         } else {
+                            // Revert status back to pending on failure
+                            try {
+                                $payment->update(['status' => 'pending']);
+                            } catch (\Exception $e) {
+                                Log::error('Failed to revert payment status', [
+                                    'order_id' => $order->id,
+                                    'error' => $e->getMessage(),
+                                ]);
+                            }
+                            
                             $errorMessage = $execution['message'] ?? 'Payment verification failed. Please contact support.';
                             Log::error('bKash payment execution failed', [
                                 'order_id' => $order->id,
@@ -143,6 +253,7 @@ class PaymentController extends Controller
                                 'execution_result' => $execution,
                                 'timestamp' => now()->toIso8601String(),
                             ]);
+                            
                             return redirect()->route('checkout.show')
                                 ->with('error', $errorMessage);
                         }
@@ -171,19 +282,74 @@ class PaymentController extends Controller
                 } catch (\Throwable $e) {
                     Log::error('Failed to refresh payment status', ['order_id' => $order->id, 'error' => $e->getMessage()]);
                 }
+                
+                // Clear shopping cart after successful payment
                 try {
-                    $cart = ShoppingCart::where('user_id', $order->user_id)
-                        ->orWhere('session_id', session()->getId())
-                        ->first();
+                    // First, try to find cart using session-stored identifiers
+                    $cart = null;
+                    $cartId = session('pending_order_cart_id');
+                    
+                    if ($cartId) {
+                        $cart = ShoppingCart::find($cartId);
+                        Log::info('Found cart from session', ['cart_id' => $cartId]);
+                    }
+                    
+                    // Fallback: Find cart by user_id or session_id
+                    if (!$cart) {
+                        if ($order->user_id) {
+                            $cart = ShoppingCart::where('user_id', $order->user_id)->first();
+                        }
+                        if (!$cart && session()->getId()) {
+                            $cart = ShoppingCart::where('session_id', session()->getId())->first();
+                        }
+                    }
                     
                     if ($cart) {
+                        Log::info('Clearing cart after payment', [
+                            'cart_id' => $cart->id,
+                            'cart_user_id' => $cart->user_id,
+                            'cart_session_id' => $cart->session_id,
+                            'order_id' => $order->id,
+                            'order_user_id' => $order->user_id,
+                        ]);
+                        
+                        // Increment coupon usage count if applicable
                         if ($cart->coupon) {
-                            try { $cart->coupon->increment('used_count'); } catch (\Throwable $e) {}
+                            try { 
+                                $cart->coupon->increment('used_count'); 
+                            } catch (\Throwable $e) {
+                                Log::warning('Failed to increment coupon usage', ['error' => $e->getMessage()]);
+                            }
                         }
-                        $cart->items()->delete();
+                        
+                        // Delete all cart items
+                        $deletedItems = $cart->items()->delete();
+                        
+                        // Delete the cart itself
+                        $cart->delete();
+                        
+                        // Clear session data
+                        session()->forget(['pending_order_cart_id', 'pending_order_cart_user_id', 'pending_order_cart_session_id']);
+                        
+                        Log::info('Cart cleared successfully', [
+                            'order_id' => $order->id,
+                            'deleted_items' => $deletedItems,
+                        ]);
+                    } else {
+                        Log::warning('No cart found to clear', [
+                            'order_id' => $order->id,
+                            'order_user_id' => $order->user_id,
+                            'session_cart_id' => session('pending_order_cart_id'),
+                            'current_session_id' => session()->getId(),
+                            'auth_user_id' => Auth::id(),
+                        ]);
                     }
                 } catch (\Throwable $e) {
-                    Log::error('Failed to clear cart after payment', ['error' => $e->getMessage()]);
+                    Log::error('Failed to clear cart after payment', [
+                        'error' => $e->getMessage(),
+                        'order_id' => $order->id,
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                 }
                 // Send order notifications after successful payment
                 $this->sendOrderNotifications($order);
@@ -229,11 +395,20 @@ class PaymentController extends Controller
         } catch (\Throwable $e) {
             Log::error('Failed to refresh payment status', ['order_id' => $order->id, 'error' => $e->getMessage()]);
         }
+        
+        // Clear shopping cart after demo payment
         try {
             $cart = ShoppingCart::forCurrent()->first();
             if ($cart) {
-                if ($cart->coupon) { try { $cart->coupon->increment('used_count'); } catch (\Throwable $e) {} }
+                if ($cart->coupon) { 
+                    try { 
+                        $cart->coupon->increment('used_count'); 
+                    } catch (\Throwable $e) {
+                        Log::warning('Failed to increment coupon usage', ['error' => $e->getMessage()]);
+                    } 
+                }
                 $cart->items()->delete();
+                $cart->delete(); // Delete the cart itself
             }
         } catch (\Throwable $e) {
             Log::error('Failed to clear cart after demo payment', ['error' => $e->getMessage()]);

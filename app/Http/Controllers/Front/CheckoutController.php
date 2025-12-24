@@ -62,6 +62,13 @@ class CheckoutController extends Controller
             'payment_method' => 'required|in:cod,manual,sslcommerz,bkash',
         ]);
 
+        // Store cart identifiers in session for later clearing
+        session([
+            'pending_order_cart_id' => $cart->id,
+            'pending_order_cart_user_id' => $cart->user_id,
+            'pending_order_cart_session_id' => $cart->session_id,
+        ]);
+
         $order = DB::transaction(function () use ($cart, $data) {
             $orderNumber = 'ORD-' . date('ymd') . '-' . Str::upper(Str::random(6));
             $subtotal = $cart->subtotal();
@@ -114,7 +121,11 @@ class CheckoutController extends Controller
         $redirect = null;
         
         if ($method === 'cod') {
-            // For COD, keep payment status as pending - will be marked as paid on delivery
+            // For COD, clear cart immediately
+            $this->clearCartForOrder($cart);
+            $this->sendOrderNotifications($order);
+            $this->clearCartForOrder($cart);
+            $this->sendOrderNotifications($order);
             Payment::create([
                 'order_id' => $order->id,
                 'payment_method' => 'COD',
@@ -125,14 +136,6 @@ class CheckoutController extends Controller
                 'status' => 'pending',
                 'processed_at' => null,
             ]);
-            if ($cart->coupon) {
-                try {
-                    $cart->coupon->increment('used_count');
-                } catch (\Throwable $e) {
-                }
-            }
-            $cart->items()->delete();
-            $this->sendOrderNotifications($order);
             $redirect = route('checkout.success', $order->order_number);
         } elseif (in_array($method, ['sslcommerz', 'bkash'])) {
             $redirect = URL::temporarySignedRoute('payment.initiate', now()->addMinutes(15), [
@@ -152,7 +155,102 @@ class CheckoutController extends Controller
     public function success($orderNumber)
     {
         $order = Order::where('order_number', $orderNumber)->with('items')->firstOrFail();
+        
+        // Use session-stored cart identifiers to find and clear the cart
+        $this->clearCartFromSession();
+        
         return view('front-end.checkout.success', compact('order'));
+    }
+
+    /**
+     * Clear cart for an order
+     */
+    protected function clearCartForOrder(ShoppingCart $cart): void
+    {
+        try {
+            Log::info('Clearing cart for order', [
+                'cart_id' => $cart->id,
+                'user_id' => $cart->user_id,
+                'session_id' => $cart->session_id,
+                'items_count' => $cart->items->count(),
+            ]);
+
+            // Increment coupon usage count if applicable
+            if ($cart->coupon) {
+                try {
+                    $cart->coupon->increment('used_count');
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to increment coupon usage', ['error' => $e->getMessage()]);
+                }
+            }
+
+            // Delete all cart items and the cart itself
+            $cart->items()->delete();
+            $cart->delete();
+
+            // Clear session data
+            session()->forget(['pending_order_cart_id', 'pending_order_cart_user_id', 'pending_order_cart_session_id']);
+
+            Log::info('Cart cleared successfully');
+        } catch (\Throwable $e) {
+            Log::error('Failed to clear cart for order', [
+                'error' => $e->getMessage(),
+                'cart_id' => $cart->id ?? 'unknown',
+            ]);
+        }
+    }
+
+    /**
+     * Clear cart using session-stored identifiers
+     */
+    protected function clearCartFromSession(): void
+    {
+        try {
+            $cartId = session('pending_order_cart_id');
+            $cartUserId = session('pending_order_cart_user_id');
+            $cartSessionId = session('pending_order_cart_session_id');
+
+            if (!$cartId) {
+                return;
+            }
+
+            $cart = ShoppingCart::find($cartId);
+
+            // Fallback: try to find by user_id or session_id if direct ID lookup fails
+            if (!$cart) {
+                if ($cartUserId) {
+                    $cart = ShoppingCart::where('user_id', $cartUserId)->first();
+                } elseif ($cartSessionId) {
+                    $cart = ShoppingCart::where('session_id', $cartSessionId)->first();
+                }
+            }
+
+            if ($cart) {
+                Log::info('Success page: Clearing cart from session', [
+                    'cart_id' => $cart->id,
+                    'stored_cart_id' => $cartId,
+                ]);
+
+                if ($cart->coupon) {
+                    try {
+                        $cart->coupon->increment('used_count');
+                    } catch (\Throwable $e) {
+                    }
+                }
+
+                $cart->items()->delete();
+                $cart->delete();
+
+                Log::info('Success page: Cart cleared successfully');
+            }
+
+            // Always clear session data
+            session()->forget(['pending_order_cart_id', 'pending_order_cart_user_id', 'pending_order_cart_session_id']);
+        } catch (\Throwable $e) {
+            Log::error('Success page: Failed to clear cart from session', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

@@ -411,10 +411,24 @@
       }
 
       if (chkForm) {
+        let isSubmitting = false; // Prevent double submission
+        
         chkForm.addEventListener('submit', function (e) {
           e.preventDefault();
+          
+          // Prevent double submission
+          if (isSubmitting) {
+            console.log('Form submission already in progress');
+            return false;
+          }
+          
           clearCheckoutErrors();
-          if (placeBtn) placeBtn.disabled = true;
+          isSubmitting = true;
+          if (placeBtn) {
+            placeBtn.disabled = true;
+            placeBtn.textContent = 'Processing...';
+          }
+          
           const fd = new FormData(chkForm);
           fetch(chkForm.action, {
             method: 'POST',
@@ -422,11 +436,18 @@
             body: fd
           }).then(async r => { let data = {}; try { data = await r.json(); } catch (_) { } return { ok: r.ok, status: r.status, data }; })
             .then(resp => {
-              if (placeBtn) placeBtn.disabled = false;
               const { ok, status, data } = resp;
               if (ok && data && data.success && data.redirect) {
+                // Keep button disabled and show redirecting message
+                if (placeBtn) placeBtn.textContent = 'Redirecting to payment...';
                 window.location.href = data.redirect;
                 return;
+              }
+              // Re-enable on error only
+              isSubmitting = false;
+              if (placeBtn) {
+                placeBtn.disabled = false;
+                placeBtn.textContent = 'Place Order';
               }
               if (status === 422 && data && data.errors) {
                 Object.entries(data.errors).forEach(([name, messages]) => setCheckoutFieldError(name, messages));
@@ -436,7 +457,11 @@
               }
               checkoutTopAlert((data && data.message) ? data.message : 'Failed to place order. Please try again.');
             }).catch(err => {
-              if (placeBtn) placeBtn.disabled = false;
+              isSubmitting = false;
+              if (placeBtn) {
+                placeBtn.disabled = false;
+                placeBtn.textContent = 'Place Order';
+              }
               console.error(err);
               checkoutTopAlert('Network error. Please try again.');
             });
