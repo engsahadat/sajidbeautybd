@@ -149,6 +149,8 @@ Route::prefix('admin')->group(function () {
         Route::get('social-media/connect-pages', [SocialMediaController::class, 'connectPages'])->name('admin.social-media.connect-pages');
         Route::get('social-media/connect/{platform}', [SocialMediaController::class, 'initiateConnection'])->name('admin.social-media.connect');
         Route::get('social-media/callback/{platform}', [SocialMediaController::class, 'handleCallback'])->name('admin.social-media.callback');
+        Route::post('social-media/fetch-pages/{platform}', [SocialMediaController::class, 'fetchPages'])->name('admin.social-media.fetch-pages');
+        Route::post('social-media/connect-page-manually', [SocialMediaController::class, 'connectPageManually'])->name('admin.social-media.connect-page-manually');
         Route::delete('social-media/pages/{page}', [SocialMediaController::class, 'disconnectPage'])->name('admin.social-media.disconnect');
         Route::get('social-media/products', [SocialMediaController::class, 'products'])->name('admin.social-media.products');
         Route::post('social-media/share', [SocialMediaController::class, 'shareProduct'])->name('admin.social-media.share');

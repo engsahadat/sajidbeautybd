@@ -49,6 +49,12 @@
                                                     <i class="fa fa-check-circle me-1"></i> Authorized
                                                 </span>
                                                 <br>
+                                                <form method="POST" action="{{ route('admin.social-media.fetch-pages', $setting->platform) }}" style="display: inline-block;" class="me-1">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="fa fa-download me-1"></i> Fetch Pages
+                                                    </button>
+                                                </form>
                                                 <a href="{{ route('admin.social-media.connect', $setting->platform) }}" 
                                                    class="btn btn-sm btn-outline-primary">
                                                     <i class="fa fa-sync me-1"></i> Reconnect
@@ -78,6 +84,39 @@
 
                     <hr>
 
+                    <!-- Manual Page Connection -->
+                    @if($settings->where('access_token', '!=', null)->where('platform', 'facebook')->count() > 0)
+                    <div class="mb-4">
+                        <h5>Connect by Page ID <small class="text-muted">(If pages don't auto-fetch)</small></h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <form method="POST" action="{{ route('admin.social-media.connect-page-manually') }}">
+                                    @csrf
+                                    <input type="hidden" name="platform" value="facebook">
+                                    <div class="row align-items-end">
+                                        <div class="col-md-9">
+                                            <label class="form-label">Facebook Page ID</label>
+                                            <input type="text" name="page_id" class="form-control" 
+                                                   placeholder="Enter your Facebook Page ID (e.g., 122103959102127148)" 
+                                                   required>
+                                            <small class="text-muted">
+                                                Find your Page ID: Go to your page → About → Page ID, or check the URL after "facebook.com/"
+                                            </small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="fa fa-plus me-1"></i> Connect Page
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    <hr>
+
                     <!-- Connected Pages -->
                     <div class="mb-4">
                         <h5>Connected Pages</h5>
@@ -104,7 +143,7 @@
                                                     {{ ucfirst($page->platform) }}
                                                 </span>
                                                 @if($page->page_username)
-                                                    <span class="ms-2">@{{ $page->page_username }}</span>
+                                                    <span class="ms-2">{{ $page->page_username }}</span>
                                                 @endif
                                                 <br>
                                                 <small>Connected: {{ $page->connected_at->diffForHumans() }}</small>
@@ -135,7 +174,19 @@
                         @empty
                             <div class="alert alert-info">
                                 <i class="fa fa-info-circle me-2"></i>
-                                No pages connected yet. Connect a platform above to get started.
+                                <strong>No pages connected yet.</strong>
+                                @if($settings->where('access_token', '!=', null)->count() > 0)
+                                    <p class="mb-2 mt-2">Click <strong>"Fetch Pages"</strong> button above to retrieve your pages.</p>
+                                    <p class="mb-0 small">
+                                        <strong>Note:</strong> You must have Facebook Pages (not just a profile). 
+                                        If "Fetch Pages" returns no results:
+                                        <br>1. Create a Facebook Page at <a href="https://www.facebook.com/pages/create" target="_blank" class="alert-link">facebook.com/pages/create</a>
+                                        <br>2. Click "Reconnect" above and ensure you grant all permissions
+                                        <br>3. Try "Fetch Pages" again
+                                    </p>
+                                @else
+                                    Connect a platform above to get started.
+                                @endif
                             </div>
                         @endforelse
                     </div>

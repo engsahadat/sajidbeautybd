@@ -86,23 +86,113 @@ class SocialMediaService
     }
 
     /**
+     * Check Facebook token permissions
+     */
+    public function checkFacebookPermissions($setting)
+    {
+        $response = Http::get('https://graph.facebook.com/v18.0/me/permissions', [
+            'access_token' => $setting->access_token
+        ]);
+
+        if ($response->successful()) {
+            $permissions = $response->json()['data'] ?? [];
+            $grantedPermissions = collect($permissions)
+                ->filter(fn($p) => $p['status'] === 'granted')
+                ->pluck('permission')
+                ->toArray();
+            
+            Log::info('Facebook permissions granted', ['permissions' => $grantedPermissions]);
+            return $grantedPermissions;
+        }
+
+        return [];
+    }
+
+    /**
      * Fetch user's Facebook pages
      */
     public function fetchFacebookPages($setting)
     {
+        Log::info('Fetching Facebook pages', [
+            'setting_id' => $setting->id,
+            'has_token' => !empty($setting->access_token)
+        ]);
+
+        // Check permissions first
+        $permissions = $this->checkFacebookPermissions($setting);
+        $requiredPermissions = ['pages_show_list', 'pages_read_engagement', 'pages_manage_posts'];
+        $missingPermissions = array_diff($requiredPermissions, $permissions);
+        
+        if (!empty($missingPermissions)) {
+            Log::warning('Missing required Facebook permissions', ['missing' => $missingPermissions]);
+        }
+
+        // Get user info for debugging
+        $userResponse = Http::get('https://graph.facebook.com/v18.0/me', [
+            'access_token' => $setting->access_token,
+            'fields' => 'id,name,email'
+        ]);
+        
+        Log::info('Facebook user info', ['user' => $userResponse->json()]);
+
+        // Try to get accounts with more details
         $response = Http::get('https://graph.facebook.com/v18.0/me/accounts', [
             'access_token' => $setting->access_token,
-            'fields' => 'id,name,access_token,picture,username'
+            'fields' => 'id,name,access_token,picture,username,tasks'
+        ]);
+
+        Log::info('Facebook API Response', [
+            'status' => $response->status(),
+            'body' => $response->json()
         ]);
 
         if ($response->failed()) {
-            throw new \Exception('Failed to fetch Facebook pages');
+            $error = $response->json();
+            Log::error('Failed to fetch Facebook pages', ['response' => $error]);
+            throw new \Exception('Failed to fetch Facebook pages: ' . ($error['error']['message'] ?? 'Unknown error'));
         }
 
         $pages = $response->json()['data'] ?? [];
+        
+        // If no pages found with /me/accounts, try checking for business-managed pages
+        if (empty($pages)) {
+            Log::info('No pages found via /me/accounts, checking business pages');
+            
+            $businessResponse = Http::get('https://graph.facebook.com/v18.0/me/businesses', [
+                'access_token' => $setting->access_token,
+                'fields' => 'id,name'
+            ]);
+            
+            if ($businessResponse->successful()) {
+                $businesses = $businessResponse->json()['data'] ?? [];
+                Log::info('Businesses found', ['count' => count($businesses), 'businesses' => $businesses]);
+                
+                foreach ($businesses as $business) {
+                    $businessPagesResponse = Http::get("https://graph.facebook.com/v18.0/{$business['id']}/client_pages", [
+                        'access_token' => $setting->access_token,
+                        'fields' => 'id,name,access_token,picture,username'
+                    ]);
+                    
+                    if ($businessPagesResponse->successful()) {
+                        $businessPages = $businessPagesResponse->json()['data'] ?? [];
+                        $pages = array_merge($pages, $businessPages);
+                        Log::info('Business pages found', ['business' => $business['name'], 'pages_count' => count($businessPages)]);
+                    }
+                }
+            }
+        }
+        
+        Log::info('Facebook pages found', ['count' => count($pages)]);
+        
+        if (empty($pages)) {
+            Log::warning('No Facebook pages found for user');
+        }
+        
         $connectedPages = [];
 
         foreach ($pages as $pageData) {
+            Log::info('Saving Facebook page', ['page_name' => $pageData['name'], 'page_id' => $pageData['id']]);
+            
             $page = SocialMediaPage::updateOrCreate(
                 [
                     'platform' => SocialMediaSetting::PLATFORM_FACEBOOK,
@@ -120,10 +210,55 @@ class SocialMediaService
                 ]
             );
 
+            Log::info('Facebook page saved', ['page_id' => $page->id, 'page_name' => $page->page_name]);
             $connectedPages[] = $page;
         }
 
+        Log::info('Total pages connected', ['count' => count($connectedPages)]);
         return $connectedPages;
+    }
+
+    /**
+     * Manually add a Facebook page by page ID
+     */
+    public function connectFacebookPageManually($setting, $pageId)
+    {
+        Log::info('Manually connecting Facebook page', ['page_id' => $pageId]);
+
+        // Try to get page info with user token
+        $response = Http::get("https://graph.facebook.com/v18.0/{$pageId}", [
+            'access_token' => $setting->access_token,
+            'fields' => 'id,name,username,picture,access_token'
+        ]);
+
+        if ($response->failed()) {
+            $error = $response->json();
+            Log::error('Failed to get page info', ['page_id' => $pageId, 'error' => $error]);
+            throw new \Exception('Failed to connect page: ' . ($error['error']['message'] ?? 'Page not found or no access'));
+        }
+
+        $pageData = $response->json();
+        Log::info('Page data retrieved', ['page' => $pageData]);
+
+        $page = SocialMediaPage::updateOrCreate(
+            [
+                'platform' => SocialMediaSetting::PLATFORM_FACEBOOK,
+                'page_id' => $pageData['id']
+            ],
+            [
+                'social_media_setting_id' => $setting->id,
+                'page_name' => $pageData['name'],
+                'page_username' => $pageData['username'] ?? null,
+                'page_access_token' => $pageData['access_token'] ?? $setting->access_token,
+                'page_picture' => $pageData['picture']['data']['url'] ?? null,
+                'page_url' => 'https://facebook.com/' . ($pageData['username'] ?? $pageData['id']),
+                'is_connected' => true,
+                'connected_at' => now()
+            ]
+        );
+
+        Log::info('Page manually connected', ['page_id' => $page->id, 'page_name' => $page->page_name]);
+        return $page;
     }
 
     /**
