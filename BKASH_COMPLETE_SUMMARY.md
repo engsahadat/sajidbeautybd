@@ -362,7 +362,7 @@ Search for:
 All implementations follow bKash Developer Portal specifications:
 - https://developer.bka.sh/docs/tokenized-checkout-process
 - https://developer.bka.sh/docs/error-codes
-- https://developer.bka.sh/v1.2.0-beta/reference
+- https://developer.bka.sh/reference
 
 Ready to provide:
 - API request/response for all 5 APIs in specified format
@@ -380,4 +380,4 @@ Ready to provide:
 
 **Last Updated:** December 22, 2025  
 **Implementation By:** Sajid Beauty BD Development Team  
-**Integration Version:** Tokenized Checkout v1.2.0-beta
+**Integration Version:** Tokenized Checkout v2

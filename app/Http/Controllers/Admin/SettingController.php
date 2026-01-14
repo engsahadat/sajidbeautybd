@@ -110,6 +110,14 @@ class SettingController extends Controller
                     ['key' => 'twitter_url', 'label' => 'Twitter/X URL', 'type' => 'string', 'rules' => 'nullable|url|max:255', 'public' => true],
                 ],
             ],
+            [
+                'title' => 'Facebook Meta Pixel',
+                'fields' => [
+                    ['key' => 'meta_pixel_enabled', 'label' => 'Enable Meta Pixel', 'type' => 'boolean', 'rules' => 'nullable|boolean', 'public' => true],
+                    ['key' => 'meta_pixel_id', 'label' => 'Meta Pixel ID', 'type' => 'string', 'rules' => 'nullable|string|max:50', 'public' => true],
+                    ['key' => 'meta_pixel_access_token', 'label' => 'Access Token (For Server Events)', 'type' => 'string', 'rules' => 'nullable|string|max:255', 'public' => false],
+                ],
+            ],
         ];
     }
 }

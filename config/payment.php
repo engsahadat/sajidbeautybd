@@ -22,9 +22,7 @@ return [
         'username' => env('BKASH_USERNAME', ''),
         'password' => env('BKASH_PASSWORD', ''),
         'sandbox' => env('BKASH_SANDBOX', true),
-        'base_url' => env('BKASH_BASE_URL') ?: (env('BKASH_SANDBOX', true) 
-            ? 'https://tokenized.sandbox.bka.sh/v1.2.0-beta/' 
-            : 'https://tokenized.pay.bka.sh/v1.2.0-beta/'),
+        'base_url' => env('BKASH_BASE_URL'),
         'callback_url' => env('BKASH_CALLBACK_URL') ?: rtrim(env('APP_URL'), '/') . '/payment/callback/bkash',
         'timeout' => env('BKASH_TIMEOUT', 30),
     ],

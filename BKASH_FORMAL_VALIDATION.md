@@ -29,7 +29,7 @@
 ### 1. Grant Token API
 
 **API Title:** Grant Token  
-**API URL:** `https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/token/grant`
+**API URL:** `https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/token/grant`
 
 **Request Headers:**
 ```
@@ -59,7 +59,7 @@ password: sandboxTokenizedUser02@12345
 ### 2. Create Payment API
 
 **API Title:** Create Payment  
-**API URL:** `https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/create`
+**API URL:** `https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/create`
 
 **Request Headers:**
 ```
@@ -95,7 +95,7 @@ x-app-key: 4f6o0cjiki2rfm34kfdadl1eqq
 ### 3. Execute Payment API
 
 **API Title:** Execute Payment  
-**API URL:** `https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/execute`
+**API URL:** `https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/execute`
 
 **Request Headers:**
 ```
@@ -125,7 +125,7 @@ x-app-key: 4f6o0cjiki2rfm34kfdadl1eqq
 ### 4. Query Payment Status API
 
 **API Title:** Query Payment Status  
-**API URL:** `https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/payment/status`
+**API URL:** `https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/payment/status`
 
 **Request Headers:**
 ```
@@ -155,7 +155,7 @@ x-app-key: 4f6o0cjiki2rfm34kfdadl1eqq
 ### 5. Search Transaction API
 
 **API Title:** Search Transaction  
-**API URL:** `https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/general/searchTransaction`
+**API URL:** `https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/general/searchTransaction`
 
 **Request Headers:**
 ```
@@ -389,7 +389,7 @@ Search for:
 **Email:** [Your Email]  
 **Phone:** [Your Phone]  
 **System:** Laravel 11.x  
-**bKash Integration:** Tokenized Checkout v1.2.0-beta
+**bKash Integration:** Tokenized Checkout v2
 
 ---
 

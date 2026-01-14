@@ -1,7 +1,7 @@
 # bKash Payment Integration - Complete API Implementation
 
 ## Overview
-This document describes the complete implementation of bKash Tokenized Checkout API v1.2.0-beta for the Sajid Beauty BD e-commerce platform.
+This document describes the complete implementation of bKash Tokenized Checkout API v2 for the Sajid Beauty BD e-commerce platform.
 
 ## API Endpoints Implemented
 
@@ -227,7 +227,7 @@ password: your_bkash_password
 ### Environment Variables (.env)
 ```env
 # bKash Configuration
-BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v1.2.0-beta/
+BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v2/
 BKASH_USERNAME=your_bkash_username
 BKASH_PASSWORD=your_bkash_password
 BKASH_APP_KEY=4f6o0cjiki2rfm34kfdadl1eqq
@@ -244,7 +244,7 @@ BKASH_TIMEOUT=30
 ### Production Configuration
 For production, change:
 ```env
-BKASH_BASE_URL=https://tokenized.pay.bka.sh/v1.2.0-beta/
+BKASH_BASE_URL=https://tokenized.pay.bka.sh/v2/
 BKASH_USERNAME=your_production_username
 BKASH_PASSWORD=your_production_password
 BKASH_APP_KEY=your_production_app_key
@@ -352,7 +352,7 @@ Username: (provided by bKash)
 Password: (provided by bKash)
 App Key: 4f6o0cjiki2rfm34kfdadl1eqq
 App Secret: 2is7hdktrekvrbljjh44ll3d9l1dtjo4pasmjvs5vl5qr3fug4b
-Base URL: https://tokenized.sandbox.bka.sh/v1.2.0-beta/
+Base URL: https://tokenized.sandbox.bka.sh/v2/
 ```
 
 **Note:** The username and password for sandbox are provided separately by bKash when you register for sandbox access.

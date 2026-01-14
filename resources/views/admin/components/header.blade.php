@@ -50,6 +50,9 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('admin_asset/css/style.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('admin_asset/css/toastify.min.css') }}">
     @stack('admin-styles')
+
+    {{-- Meta (Facebook) Pixel --}}
+    @include('components.meta-pixel')
 </head>
 <body>
     <!-- page-wrapper Start-->

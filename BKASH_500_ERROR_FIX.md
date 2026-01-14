@@ -46,7 +46,7 @@ You were getting **500 SERVER ERROR** on live site when bKash callback was trigg
 
 **Added missing bKash configuration:**
 ```env
-BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v1.2.0-beta/
+BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v2/
 BKASH_APP_KEY=0vWQuCRGiUX7EPVjQDr0EUAYtc
 BKASH_APP_SECRET=jcUNPBgbcqEDedNKdvE4G1cAK7D3hCjmJccNPZZBq96QIxxwAMEx
 BKASH_USERNAME=01770618567
@@ -74,7 +74,7 @@ nano /path/to/your/project/.env
 
 Add/Update these lines:
 ```env
-BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v1.2.0-beta/
+BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v2/
 BKASH_APP_KEY=0vWQuCRGiUX7EPVjQDr0EUAYtc
 BKASH_APP_SECRET=jcUNPBgbcqEDedNKdvE4G1cAK7D3hCjmJccNPZZBq96QIxxwAMEx
 BKASH_USERNAME=01770618567

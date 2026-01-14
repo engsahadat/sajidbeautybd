@@ -4,7 +4,7 @@
 
 ### 1. ❌ Wrong API Version in .env
 **Problem:** `.env` had `BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v2/`
-**Fixed:** Changed to `https://tokenized.sandbox.bka.sh/v1.2.0-beta/`
+**Fixed:** Changed to `https://tokenized.sandbox.bka.sh/v2/`
 
 ### 2. ❌ Wrong API Endpoints
 **Problem:** Code was using wrong endpoint paths:
@@ -54,7 +54,7 @@ Status Message: Successful
 
 ### .env Settings
 ```env
-BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v1.2.0-beta/
+BKASH_BASE_URL=https://tokenized.sandbox.bka.sh/v2/
 BKASH_USERNAME=01770618567
 BKASH_PASSWORD=D7DaC<*E*eG
 BKASH_APP_KEY=0vWQuCRGiUX7EPVjQDr0EUAYtc
@@ -122,7 +122,7 @@ Service: BkashService->execute()
 - Fixed `queryPayment()` endpoint: `tokenized/checkout/payment/status`
 
 ### 3. `.env`
-- Fixed `BKASH_BASE_URL` to use v1.2.0-beta
+- Fixed `BKASH_BASE_URL` to use v2
 - Fixed `BKASH_CALLBACK_URL` to use correct route
 
 ---
@@ -160,7 +160,7 @@ Contact bKash to get:
 ### 2. Update .env
 ```env
 BKASH_SANDBOX=false
-BKASH_BASE_URL=https://tokenized.pay.bka.sh/v1.2.0-beta/
+BKASH_BASE_URL=https://tokenized.pay.bka.sh/v2/
 BKASH_APP_KEY=your_production_app_key
 BKASH_APP_SECRET=your_production_app_secret
 BKASH_USERNAME=your_production_username
@@ -189,7 +189,7 @@ Make a small test purchase to verify everything works.
 
 ### Token Grant
 ```
-POST https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/token/grant
+POST https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/token/grant
 
 Headers:
 - Content-Type: application/json
@@ -216,7 +216,7 @@ Response:
 
 ### Create Payment
 ```
-POST https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/create
+POST https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/create
 
 Headers:
 - Content-Type: application/json
@@ -250,7 +250,7 @@ Response:
 
 ### Execute Payment
 ```
-POST https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/execute
+POST https://tokenized.sandbox.bka.sh/v2/tokenized/checkout/execute
 
 Headers:
 - Content-Type: application/json

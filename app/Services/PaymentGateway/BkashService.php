@@ -40,13 +40,13 @@ class BkashService
                 ->withHeaders([
                     'Content-Type' => 'application/json',
                     'Accept' => 'application/json',
-                    'username' => $this->config['username'],
-                    'password' => $this->config['password'],
+                    'Username' => $this->config['username'],
+                    'Password' => $this->config['password'],
                 ])->post($tokenUrl, [
                     'app_key' => $this->config['app_key'],
                     'app_secret' => $this->config['app_secret'],
                 ]);
-
+            
             $data = $response->json();
             // Check for successful response with id_token
             if (isset($data['statusCode']) && $data['statusCode'] === '0000' && isset($data['id_token'])) {
@@ -124,7 +124,6 @@ class BkashService
                 ])->post($createUrl, $payload);
 
             $data = $response->json();
-
             // Check for successful payment creation
             if (isset($data['statusCode']) && $data['statusCode'] === '0000' && isset($data['paymentID']) && isset($data['bkashURL'])) {
                 Log::info('bKash payment created successfully', [
@@ -183,6 +182,12 @@ class BkashService
      * Execute Payment API
      * API URL: https://tokenized.sandbox.bka.sh/v1.2.0-beta/tokenized/checkout/execute
      * Execute payment after user completes payment on bKash app/website
+     * 
+     * IMPORTANT: bKash Timeout Handling (Mandatory)
+     * - Every bKash API timeout is 30 seconds
+     * - If Execute Payment API doesn't respond within 30 seconds, Query Payment API MUST be called
+     * - Query Payment response 'Initiated' = Transaction not completed
+     * - Query Payment response 'Completed' = Transaction successful
      */
     public function execute(string $paymentId): array
     {
@@ -250,6 +255,71 @@ class BkashService
                 'message' => $errorMessage,
                 'error_code' => $errorCode,
                 'is_recoverable' => BkashErrorHandler::isRecoverable($errorCode),
+            ];
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // MANDATORY: Timeout detected - Call Query Payment API as per bKash guidelines
+            Log::warning('bKash Execute Payment API timeout - Calling Query Payment API (Mandatory)', [
+                'paymentID' => $paymentId,
+                'error' => $e->getMessage(),
+                'timeout_seconds' => $this->config['timeout'] ?? 30,
+            ]);
+            
+            // Call Query Payment API to check actual transaction status
+            $queryResult = $this->queryPayment($paymentId);
+            
+            if ($queryResult['success']) {
+                $transactionStatus = $queryResult['status'] ?? 'Unknown';
+                
+                Log::info('Query Payment API response after timeout', [
+                    'paymentID' => $paymentId,
+                    'transactionStatus' => $transactionStatus,
+                    'trxID' => $queryResult['transaction_id'] ?? 'N/A',
+                ]);
+                
+                // If transaction is Completed, treat as successful
+                if ($transactionStatus === 'Completed') {
+                    return [
+                        'success' => true,
+                        'transaction_id' => $queryResult['transaction_id'],
+                        'payment_id' => $queryResult['payment_id'],
+                        'amount' => $queryResult['amount'],
+                        'status' => $transactionStatus,
+                        'queried_after_timeout' => true,
+                    ];
+                }
+                
+                // If transaction is Initiated, payment not completed at bKash end
+                if ($transactionStatus === 'Initiated') {
+                    Log::warning('Payment still initiated after timeout - not completed at bKash', [
+                        'paymentID' => $paymentId,
+                    ]);
+                    
+                    return [
+                        'success' => false,
+                        'message' => 'Payment is still processing at bKash. Please try again in a few moments or contact support.',
+                        'status' => 'initiated',
+                    ];
+                }
+                
+                // Other statuses (Failed, Cancelled, etc.)
+                return [
+                    'success' => false,
+                    'message' => 'Payment status: ' . $transactionStatus . '. Please try again or contact support.',
+                    'status' => $transactionStatus,
+                ];
+            }
+            
+            // Query Payment also failed
+            Log::error('Both Execute and Query Payment APIs failed', [
+                'paymentID' => $paymentId,
+                'execute_error' => $e->getMessage(),
+                'query_result' => $queryResult,
+            ]);
+            
+            return [
+                'success' => false,
+                'message' => 'Payment verification timeout. Please contact support with your payment ID.',
+                'payment_id' => $paymentId,
             ];
         } catch (\Exception $e) {
             Log::error('bKash execute exception', [

@@ -164,7 +164,7 @@
                 </label>
               </div>
               <div class="col-sm-6">
-                <input class="pay-radio" type="radio" name="payment_method" id="pm_cod" value="cod" checked>
+                <input class="pay-radio" type="radio" name="payment_method" id="pm_cod" value="cod">
                 <label class="pay-tile" for="pm_cod">
                   <img class="pay-img" src="{{ asset('images/pay_cod.svg') }}" alt="Cash on Delivery"
                     onerror="this.style.display='none'">

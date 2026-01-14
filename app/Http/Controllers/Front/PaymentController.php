@@ -11,6 +11,7 @@ use App\Services\PaymentGateway\BkashService;
 use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
@@ -149,7 +150,7 @@ class PaymentController extends Controller
                         // PROTECTION LAYER 2: Database lock to prevent race conditions
                         // Use updateOrCreate with additional check to create a processing lock
                         try {
-                            \DB::beginTransaction();
+                            DB::beginTransaction();
                             
                             // Try to get or create payment record with lock
                             $payment = Payment::lockForUpdate()
@@ -159,7 +160,7 @@ class PaymentController extends Controller
                             
                             // If payment exists and is completed, another request already processed it
                             if ($payment && $payment->status === 'completed') {
-                                \DB::rollBack();
+                                DB::rollBack();
                                 Log::info('bKash payment already completed (found during lock check)', [
                                     'order_id' => $order->id,
                                     'payment_id' => $paymentId,
@@ -173,7 +174,7 @@ class PaymentController extends Controller
                             
                             // If payment exists and is processing, another request is handling it
                             if ($payment && $payment->status === 'processing') {
-                                \DB::rollBack();
+                                DB::rollBack();
                                 Log::info('bKash payment already being processed by another request', [
                                     'order_id' => $order->id,
                                     'payment_id' => $paymentId,
@@ -199,7 +200,7 @@ class PaymentController extends Controller
                                 ]);
                             }
                             
-                            \DB::commit();
+                            DB::commit();
                             
                             Log::info('bKash payment marked as processing - proceeding to execute', [
                                 'order_id' => $order->id,
@@ -208,7 +209,7 @@ class PaymentController extends Controller
                             ]);
                             
                         } catch (\Exception $e) {
-                            \DB::rollBack();
+                            DB::rollBack();
                             Log::error('Failed to acquire payment lock', [
                                 'order_id' => $order->id,
                                 'payment_id' => $paymentId,
@@ -220,6 +221,7 @@ class PaymentController extends Controller
                         }
                         
                         // PROTECTION LAYER 3: Execute payment with bKash API
+                        // This includes mandatory timeout handling with Query Payment API fallback
                         $execution = app(BkashService::class)->execute($paymentId);
                         
                         if ($execution['success']) {
@@ -228,10 +230,16 @@ class PaymentController extends Controller
                             $amount = $execution['amount'];
                             $gatewayResponse = $execution;
                             
+                            // Check if payment was verified via Query Payment after timeout
+                            $verificationMethod = isset($execution['queried_after_timeout']) && $execution['queried_after_timeout'] 
+                                ? 'Query Payment API (after timeout)' 
+                                : 'Execute Payment API';
+                            
                             Log::info('bKash payment executed successfully', [
                                 'order_id' => $order->id,
                                 'payment_id' => $paymentId,
                                 'transaction_id' => $transactionId,
+                                'verification_method' => $verificationMethod,
                                 'timestamp' => now()->toIso8601String(),
                             ]);
                         } else {

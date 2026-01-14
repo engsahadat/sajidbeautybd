@@ -2,7 +2,7 @@
 
 Dear bKash Team,
 
-We have completed the implementation of bKash Tokenized Checkout Payment Gateway v1.2.0-beta and are ready for formal sandbox validation.
+We have completed the implementation of bKash Tokenized Checkout Payment Gateway v2 and are ready for formal sandbox validation.
 
 ## ✅ Implementation Completed
 
@@ -103,7 +103,7 @@ After testing, we will share for each API:
 ## 🔧 Technical Implementation
 
 **Framework:** Laravel 11.x  
-**Integration Type:** Tokenized Checkout v1.2.0-beta  
+**Integration Type:** Tokenized Checkout v2  
 **Environment:** Formal Sandbox  
 
 **Key Files:**

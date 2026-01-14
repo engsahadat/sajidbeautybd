@@ -116,7 +116,7 @@ tail -f storage/logs/laravel.log
 ## 🚦 Current Configuration
 
 **Environment:** Sandbox  
-**Base URL:** `https://tokenized.sandbox.bka.sh/v1.2.0-beta/`  
+**Base URL:** `https://tokenized.sandbox.bka.sh/v2/`  
 **Callback URL:** `https://www.sajidbeautybd.com/payment/callback/bkash`  
 **Credentials:** Formal sandbox (configured in .env)
 
