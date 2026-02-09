@@ -119,12 +119,35 @@ class CartController extends Controller
 
             $cartCount = $cart->items()->sum('quantity');
 
+            // Meta Pixel: Track AddToCart event (server-side)
+            if (function_exists('track_pixel_event') && function_exists('meta_pixel')) {
+                try {
+                    track_pixel_event('AddToCart', meta_pixel()->formatProductData($product), [
+                        'email' => auth()->user()?->email,
+                        'phone' => auth()->user()?->phone,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::warning('Meta Pixel AddToCart event failed: ' . $e->getMessage());
+                }
+            }
+
             if ($request->expectsJson()) {
-                return response()->json([
+                $response = [
                     'success' => true,
                     'message' => 'Product added to cart successfully',
                     'cart_count' => $cartCount
-                ]);
+                ];
+
+                // Add browser-side pixel tracking script
+                if (function_exists('pixel_add_to_cart')) {
+                    try {
+                        $response['pixel_script'] = pixel_add_to_cart($product);
+                    } catch (\Exception $e) {
+                        Log::warning('Meta Pixel script generation failed: ' . $e->getMessage());
+                    }
+                }
+
+                return response()->json($response);
             }
 
             return back()->with('message','Added to cart');

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Compare;
 use App\Models\ShoppingCart;
 use App\Models\WishlistItem;
+use App\Services\MetaPixelService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -22,7 +23,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register MetaPixelService as singleton
+        $this->app->singleton(MetaPixelService::class, function ($app) {
+            return new MetaPixelService();
+        });
     }
 
     /**

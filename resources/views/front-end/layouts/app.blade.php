@@ -52,17 +52,39 @@
     <!-- Theme css -->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/style.css') }}">
     
+    <!-- Meta (Facebook) Pixel -->
+    @include('components.meta-pixel')
+    @php
+        try {
+            if (function_exists('meta_pixel')) {
+                $pixelScript = meta_pixel()->getPixelScript();
+                if (!empty($pixelScript)) {
+                    echo $pixelScript;
+                } else {
+                    // Debug: Pixel is disabled or not configured
+                    echo "<!-- Meta Pixel: Not enabled or Pixel ID not set in admin settings -->\n";
+                }
+            } else {
+                // Debug: Helper function not found
+                echo "<!-- Meta Pixel: Helper function not loaded. Run: composer dump-autoload -->\n";
+            }
+        } catch (\Exception $e) {
+            // Debug: Error occurred
+            echo "<!-- Meta Pixel Error: " . htmlspecialchars($e->getMessage()) . " -->\n";
+        }
+    @endphp
+    
     <!-- Page specific styles -->
     @stack('styles')
+
+    
+
 </head>
 <body class="theme-color-1">
     <!-- header start -->
     @include('front-end.components.header')
     <!-- header end -->
-    
     @yield('content')
-
-
     <!-- Footer Section Start -->
     @include('front-end.components.footer')
     <!-- Footer Section End -->

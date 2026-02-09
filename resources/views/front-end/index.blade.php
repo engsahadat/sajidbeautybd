@@ -5,6 +5,8 @@
 @section('title', 'Home')
 
 @push('styles')
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     /* Responsive Slider Styles */
     .home-slider {
@@ -77,6 +79,25 @@
             object-fit: contain;
             object-position: center;
         }
+    }
+    
+    /* Select2 Custom Styling */
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 38px;
+        color: #495057;
+        
+    }
+    /* .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
+    } */
+    .select2-results__option {
+      display: flex;
     }
 </style>
 @endpush
@@ -407,6 +428,17 @@
                 if (data.success) {
                     showNotification('Product added to cart successfully!', 'success');
                     updateCartCount(data.cart_count);
+
+                    // Execute Meta Pixel tracking if provided
+                    if (data.pixel_script) {
+                        try {
+                            const scriptContainer = document.createElement('div');
+                            scriptContainer.innerHTML = data.pixel_script;
+                            document.body.appendChild(scriptContainer);
+                        } catch (e) {
+                            console.warn('Meta Pixel tracking failed:', e);
+                        }
+                    }
                 } else {
                     showNotification(data.message || 'Failed to add product to cart', 'error');
                 }
@@ -714,3 +746,45 @@
     <!-- blog section end -->
 
 @endsection
+
+@push('script')
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 on Category dropdown
+            $('#category').select2({
+                placeholder: 'All Categories',
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: false,
+                language: {
+                    noResults: function() {
+                        return 'No categories found';
+                    },
+                    searching: function() {
+                        return 'Searching...';
+                    }
+                }
+            });
+            
+            // Initialize Select2 on Brand dropdown
+            $('#brand').select2({
+                placeholder: 'All Brands',
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0,
+                dropdownAutoWidth: false,
+                language: {
+                    noResults: function() {
+                        return 'No brands found';
+                    },
+                    searching: function() {
+                        return 'Searching...';
+                    }
+                }
+            });
+        });
+    </script>
+@endpush

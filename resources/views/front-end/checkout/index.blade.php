@@ -468,6 +468,11 @@
         });
       }
     });
+
+    {{-- Meta Pixel: InitiateCheckout Event --}}
+    @if(isset($cart) && $cart->items->isNotEmpty() && function_exists('pixel_initiate_checkout'))
+        {!! pixel_initiate_checkout($cart->items) !!}
+    @endif
   </script>
 @endpush
 @endsection

@@ -126,6 +126,11 @@
       window.history.pushState(null, '', window.location.href);
     });
   }
+
+  {{-- Meta Pixel: Purchase Event --}}
+  @if(isset($order) && function_exists('pixel_purchase'))
+      {!! pixel_purchase($order) !!}
+  @endif
 </script>
 @endpush
 

@@ -1,5 +1,13 @@
 @extends('front-end.layouts.app')
 @section('title', 'Product Details')
+
+@push('script')
+    {{-- Meta Pixel: ViewContent Event --}}
+    @if(isset($product) && function_exists('pixel_view_content'))
+        {!! pixel_view_content($product) !!}
+    @endif
+@endpush
+
 @section('content')
     @php
         $allowedTags = '<p><br><ul><ol><li><strong><em><b><i><u><a><img><table><thead><tbody><tr><td><th><h1><h2><h3><h4><h5><h6>';

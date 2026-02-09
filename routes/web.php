@@ -243,4 +243,9 @@ Route::match(['GET','POST'], '/payment/callback/{gateway}', [FrontPaymentControl
     Route::get('/my-orders/{orderNumber}', [MyOrdersController::class, 'show'])->name('account.orders.show');
 });
 
+// Meta Pixel Test Route (Remove after testing)
+Route::get('/meta-pixel-test', function () {
+    return view('meta-pixel-test');
+});
+
 require __DIR__ . '/auth.php';
